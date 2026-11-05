@@ -60,6 +60,16 @@ CREATE TABLE box_history(revision INTEGER PRIMARY KEY, recording_id TEXT REFEREN
  applied_at TEXT NOT NULL);
 """
 
+MAP_SCHEMA = """
+CREATE TABLE scan_map_state(recording_id TEXT PRIMARY KEY REFERENCES recording(id),
+ document TEXT NOT NULL);
+CREATE TABLE scan_map_slot(inventory_id TEXT PRIMARY KEY REFERENCES owned(id),
+ recording_id TEXT NOT NULL REFERENCES recording(id), segment INTEGER NOT NULL,
+ column_index INTEGER NOT NULL, world_y REAL NOT NULL, rect TEXT NOT NULL,
+ observation_id TEXT NOT NULL REFERENCES observation(id));
+CREATE INDEX map_recording ON scan_map_slot(recording_id,segment,world_y);
+"""
+
 
 def now() -> str:
     return datetime.now(UTC).isoformat()
@@ -78,7 +88,9 @@ class Store:
                 if name == "inventory" and version == 1:
                     db.executescript("BEGIN;" + SNAPSHOT_SCHEMA + "PRAGMA user_version=2; COMMIT;")
                     version = 2
-                if version != (2 if name == "inventory" else 1):
+                if name == "inventory" and version == 2:
+                    db.executescript("BEGIN;" + MAP_SCHEMA + "PRAGMA user_version=3; COMMIT;")
+                elif version != (3 if name == "inventory" else 1):
                     raise ValueError(f"Unsupported {name} schema version {version}")
 
     def connect(self, name: str = "inventory") -> sqlite3.Connection:
