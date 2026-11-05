@@ -2,6 +2,7 @@ import json
 
 import cv2
 
+from padbox.recognition.evaluate import evaluate
 from padbox.recognition.matcher import Matcher
 
 
@@ -31,6 +32,38 @@ def test_missing_and_tiny_reference_set(store):
     refs = store.references()[:1]
     result = Matcher(refs).match(cv2.imread(refs[0]["icon"]))
     assert not result.high_confidence
+
+
+def test_evaluation_metrics_are_explicitly_synthetic(store, fixtures):
+    report = evaluate(Matcher(store.references()), fixtures["labels"])
+    assert "NOT real PAD" in report["dataset"]
+    assert report["known_examples"] == 45
+    assert report["top1_accuracy"] == 1
+    assert report["top3_accuracy"] == 1
+    assert report["false_high_confidence_count"] == 0
+    assert report["unknown_rejection_rate"] == 1
+
+
+def test_false_high_metric_denominators(store, fixtures, tmp_path):
+    # Intentionally wrong label must be counted as an incorrect confident result.
+    path = tmp_path / "wrong.json"
+    path.write_text(
+        json.dumps(
+            {
+                "dataset": "intentional mislabel for harness test",
+                "examples": [
+                    {
+                        "image": str(fixtures["references"].parent / "icons" / "1.png"),
+                        "monster_id": 900002,
+                    }
+                ],
+            }
+        )
+    )
+    report = evaluate(Matcher(store.references()), path)
+    assert report["top1_accuracy"] == 0
+    assert report["false_high_confidence_rate"] == 1
+    assert report["false_high_per_example"] == 1
 
 
 def test_large_library_shortlist_keeps_distinct_exact_match(store):

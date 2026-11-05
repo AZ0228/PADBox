@@ -11,6 +11,8 @@ import typer
 from padbox.database.store import Store
 from padbox.detection.grid import annotate, detect
 from padbox.models import Layout
+from padbox.recognition.evaluate import evaluate
+from padbox.recognition.matcher import Matcher
 from padbox.sources.adapters import PINNED_COMMIT, CuratedSource, FormationSource
 from padbox.video.reader import frames, metadata
 
@@ -92,6 +94,15 @@ def inspect(
     if not cv2.imwrite(str(output), annotate(frame.image, cells)):
         raise typer.BadParameter("Failed writing inspection image")
     emit({"metadata": metadata(recording), "cells": len(cells), "preview": output.resolve()})
+
+
+@app.command("evaluate")
+def evaluate_command(ctx: typer.Context, labels: Path, output: Path | None = None) -> None:
+    report = evaluate(Matcher(ctx.obj.references()), labels)
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report, indent=2) + "\n")
+    emit(report)
 
 
 if __name__ == "__main__":
