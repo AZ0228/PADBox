@@ -5,10 +5,14 @@ import logging
 from pathlib import Path
 from typing import Annotated
 
+import cv2
 import typer
 
 from padbox.database.store import Store
+from padbox.detection.grid import annotate, detect
+from padbox.models import Layout
 from padbox.sources.adapters import PINNED_COMMIT, CuratedSource, FormationSource
+from padbox.video.reader import frames, metadata
 
 app = typer.Typer(no_args_is_help=True, help="PADBox — local PAD collection indexing and review")
 sources = typer.Typer(no_args_is_help=True, help="Load local or pinned public reference snapshots")
@@ -74,6 +78,20 @@ def sync_source(
         )
     except (OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
+
+
+@app.command()
+def inspect(
+    recording: Path, output: Path = Path(".padbox/inspection.png"), layout: Path | None = None
+) -> None:
+    """Save an annotated first-frame preview for detection/calibration."""
+    settings = Layout.model_validate_json(layout.read_text()) if layout else Layout()
+    frame = next(frames(recording))
+    cells = detect(frame.image, settings)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    if not cv2.imwrite(str(output), annotate(frame.image, cells)):
+        raise typer.BadParameter("Failed writing inspection image")
+    emit({"metadata": metadata(recording), "cells": len(cells), "preview": output.resolve()})
 
 
 if __name__ == "__main__":
