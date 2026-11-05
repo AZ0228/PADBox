@@ -10,6 +10,7 @@ import typer
 
 from padbox.database.store import Store
 from padbox.detection.grid import annotate, detect
+from padbox.inventory.service import accept, add, set_entry_quantity, set_quantity, statistics
 from padbox.inventory.snapshots import apply_scan, history, preview_scan, scan_list
 from padbox.models import Layout
 from padbox.recognition.evaluate import evaluate
@@ -97,6 +98,58 @@ def inspect(
     if not cv2.imwrite(str(output), annotate(frame.image, cells)):
         raise typer.BadParameter("Failed writing inspection image")
     emit({"metadata": metadata(recording), "cells": len(cells), "preview": output.resolve()})
+
+
+@app.command()
+def stats(ctx: typer.Context, scan: str | None = None) -> None:
+    """Show current applied box statistics, or a specific draft with --scan."""
+    emit(statistics(ctx.obj, scan))
+
+
+@app.command("add")
+def add_command(
+    ctx: typer.Context,
+    monster_id: int,
+    quantity: int = 1,
+    scan: Annotated[str | None, typer.Option(help="Replacement draft ID")] = None,
+) -> None:
+    """Manually add missed physical copies to a draft by reference ID."""
+    try:
+        emit({"inventory_ids": add(ctx.obj, monster_id, quantity, scan)})
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@app.command("quantity")
+def quantity_command(ctx: typer.Context, monster_id: int, quantity: int) -> None:
+    """Set confirmed owned count; unresolved evidence is retained."""
+    try:
+        set_quantity(ctx.obj, monster_id, quantity)
+        emit(statistics(ctx.obj))
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@app.command("accept")
+def accept_command(
+    ctx: typer.Context, inventory_id: str, monster_id: int, distinct: bool = False
+) -> None:
+    """Confirm/correct an entry; --distinct explicitly resolves slot ambiguity."""
+    try:
+        accept(ctx.obj, inventory_id, monster_id, distinct)
+        emit(statistics(ctx.obj))
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@app.command("entry-quantity")
+def entry_quantity(ctx: typer.Context, inventory_id: str, quantity: int) -> None:
+    """Verify the displayed xN quantity of a draft slot."""
+    try:
+        set_entry_quantity(ctx.obj, inventory_id, quantity)
+        emit({"inventory_id": inventory_id, "quantity": quantity})
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 @scans.command("list")
