@@ -1,0 +1,14 @@
+{
+  "url": "https://github.com/TsubakiBotPad/pad-cogs",
+  "default_branch": "master",
+  "pushed_at": "2023-04-14T21:12:54Z",
+  "license": {
+    "key": "mit",
+    "name": "MIT License",
+    "spdx_id": "MIT",
+    "url": "https://api.github.com/licenses/mit",
+    "node_id": "MDc6TGljZW5zZTEz"
+  },
+  "latest_commit": "dd15cacc965902e6eace89dba71d1127cb0598ac",
+  "latest_commit_at": "2023-04-14T21:11:09Z"
+}

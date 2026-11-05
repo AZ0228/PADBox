@@ -1,0 +1,74 @@
+{
+  "verified_on": "2026-11-04",
+  "checks": [
+    {
+      "key": "pipeline-download",
+      "url": "https://raw.githubusercontent.com/TsubakiBotPad/pad-data-pipeline/master/utils/download_db_from_prod.sh",
+      "status": 200,
+      "last_modified": null,
+      "bytes": 261
+    },
+    {
+      "key": "pipeline-export",
+      "url": "https://raw.githubusercontent.com/TsubakiBotPad/pad-data-pipeline/master/utils/data_exporter.py",
+      "status": 200,
+      "last_modified": null,
+      "bytes": 9472
+    },
+    {
+      "key": "formation-readme",
+      "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/master/README.md",
+      "status": 200,
+      "last_modified": null,
+      "bytes": 7515
+    },
+    {
+      "key": "formation-images",
+      "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/master/images/README.md",
+      "status": 200,
+      "last_modified": null,
+      "bytes": 323
+    },
+    {
+      "key": "formation-script",
+      "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/master/script.js",
+      "status": 200,
+      "last_modified": null,
+      "bytes": 316898
+    },
+    {
+      "key": "padmate-readme",
+      "url": "https://raw.githubusercontent.com/buttwarmers/PAD-Mate/master/README.md",
+      "status": 200,
+      "last_modified": null,
+      "bytes": 63
+    },
+    {
+      "key": "ilmina",
+      "url": "https://ilmina.com",
+      "status": 200,
+      "last_modified": "Tue, 02 Jan 2024 06:22:58 GMT",
+      "bytes": 3152
+    },
+    {
+      "key": "padindex",
+      "url": "https://pad.chesterip.cc",
+      "status": 200,
+      "last_modified": null,
+      "bytes": 1902
+    },
+    {
+      "key": "padindex-alt",
+      "url": "https://padindex.com",
+      "status": 200,
+      "last_modified": null,
+      "bytes": 12389
+    },
+    {
+      "key": "tsubaki-historical-sqlite",
+      "url": "https://d1kpnpud0qoyxf.cloudfront.net/db/dadguide.sqlite",
+      "method": "HEAD",
+      "status": 404
+    }
+  ]
+}

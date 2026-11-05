@@ -1,0 +1,14 @@
+{
+  "url": "https://github.com/Mapaler/PADDashFormation",
+  "default_branch": "master",
+  "pushed_at": "2026-10-30T12:01:51Z",
+  "license": {
+    "key": "gpl-3.0",
+    "name": "GNU General Public License v3.0",
+    "spdx_id": "GPL-3.0",
+    "url": "https://api.github.com/licenses/gpl-3.0",
+    "node_id": "MDc6TGljZW5zZTk="
+  },
+  "latest_commit": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+  "latest_commit_at": "2026-10-30T12:01:31Z"
+}
