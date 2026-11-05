@@ -341,5 +341,20 @@ def evaluate_command(ctx: typer.Context, labels: Path, output: Path | None = Non
     emit(report)
 
 
+@app.command("demo")
+def demo_command(ctx: typer.Context) -> None:
+    """Generate original synthetic fixtures, import video and evaluate; use a separate --home."""
+    from padbox.demo import Demo
+
+    if ctx.obj.references() or statistics(ctx.obj)["active_entries"]:
+        raise typer.BadParameter("Demo requires an empty --home so synthetic cards stay isolated")
+    paths = Demo(ctx.obj.home / "fixtures").generate()
+    ctx.obj.load_monsters(CuratedSource(paths["references"]).load())
+    result = import_media(ctx.obj, paths["video"])
+    report = evaluate(Matcher(ctx.obj.references()), paths["labels"])
+    (ctx.obj.home / "evaluation.json").write_text(json.dumps(report, indent=2))
+    emit({"fixtures": paths, "import": result, "evaluation": report})
+
+
 if __name__ == "__main__":
     app()

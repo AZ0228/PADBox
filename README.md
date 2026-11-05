@@ -222,3 +222,20 @@ Once snapshot mode is initialized, JSON/CSV exports contain only the **currently
 ```
 
 `padbox scans history` shows applied revisions and their additions/removals. Reapplying an already applied scan is rejected. If the draft or current box changes after a preview, preview again before applying. Previous unconverted collections retain legacy export semantics until the first new snapshot begins.
+
+## Reproducible demo and checks
+
+The procedural demo uses original generated art and fictional IDs, isolated from real collections:
+
+```sh
+uv run padbox --home data/my-demo demo
+uv run padbox --home data/my-demo review
+uv run padbox --home data/my-demo export --format json
+uv run padbox --home data/my-demo evaluate data/my-demo/fixtures/labels.json
+uv run playwright install chromium  # One-time install for browser integration tests
+uv run pytest -q
+uv run ruff check src tests scripts
+uv run ruff format --check src tests scripts
+```
+
+Choose an empty home for `demo`. The generated video has repeated views, a one-row overlap and two copies of one icon. See [validation results](docs/validation.md) for actual measured results and limitations. Evaluation manifests support manually labeled **real** crops and unknown-card examples; see [reference/evaluation formats](docs/reference-manifest.md).
