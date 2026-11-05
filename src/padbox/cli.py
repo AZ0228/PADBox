@@ -10,6 +10,7 @@ import typer
 
 from padbox.database.store import Store
 from padbox.detection.grid import annotate, detect
+from padbox.export.collection import collection, csv_export
 from padbox.inventory.service import accept, add, set_entry_quantity, set_quantity, statistics
 from padbox.inventory.snapshots import apply_scan, history, preview_scan, scan_list
 from padbox.models import Layout
@@ -98,6 +99,27 @@ def inspect(
     if not cv2.imwrite(str(output), annotate(frame.image, cells)):
         raise typer.BadParameter("Failed writing inspection image")
     emit({"metadata": metadata(recording), "cells": len(cells), "preview": output.resolve()})
+
+
+@app.command("export")
+def export_command(
+    ctx: typer.Context,
+    format: Annotated[str, typer.Option(help="json or csv")] = "json",
+    output: Annotated[Path | None, typer.Option()] = None,
+    confirmed_only: bool = False,
+) -> None:
+    """Export accepted quantities and separate unresolved proposals."""
+    if format == "json":
+        content = json.dumps(collection(ctx.obj, confirmed_only), indent=2) + "\n"
+    elif format == "csv":
+        content = csv_export(ctx.obj, confirmed_only)
+    else:
+        raise typer.BadParameter("Format must be json or csv")
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(content)
+    else:
+        typer.echo(content, nl=False)
 
 
 @app.command()

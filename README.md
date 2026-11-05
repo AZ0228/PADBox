@@ -25,3 +25,21 @@ Each new scan stands alone. It never merges with, appends to, or inherits accept
 Applying requires finished capture, at least one active slot, no unresolved identity/copy/quantity issues, and explicit full-box confirmation. The optional expected-slot count is an additional check. **The tool cannot prove that unshown rows, hidden assists, filters or obscured quantities were captured.** Confirm completeness against the game before Apply. Empty scans cannot clear the box accidentally. Diff totals while unresolved entries remain are provisional.
 
 Inventory schema version 3 preserves existing observations and decisions, with per-scan map slots and checkpoints. The snapshot tables were introduced in version 2. The first new snapshot initializes the saved baseline from previously **confirmed** legacy ownership only. Old unconfirmed scan proposals remain evidence and are not counted as ownership; start a new full scan for the new workflow. No existing evidence is deleted. Applied snapshots and their before/after documents remain local history. If no entries were previously confirmed, the first diff starts from an empty saved box.
+
+## Export semantics
+
+Once snapshot mode is initialized, JSON/CSV exports contain only the **currently applied box**; drafts cannot leak into exports. JSON includes `revision` and `source_scan`. Duplicate counts and verified stack quantities are preserved. `complete: true` means the application checks passed and you attested full coverage; it is not an independently measured guarantee that every in-game slot was seen.
+
+```json
+{
+  "schema_version": 1,
+  "server": "NA",
+  "revision": 1,
+  "source_scan": "SCAN_ID",
+  "monsters": [{"monster_id": 13966, "quantity": 2, "confirmed": true}],
+  "unresolved": [],
+  "complete": true
+}
+```
+
+`padbox scans history` shows applied revisions and their additions/removals. Reapplying an already applied scan is rejected. If the draft or current box changes after a preview, preview again before applying. Previous unconverted collections retain legacy export semantics until the first new snapshot begins.
