@@ -239,3 +239,11 @@ uv run ruff format --check src tests scripts
 ```
 
 Choose an empty home for `demo`. The generated video has repeated views, a one-row overlap and two copies of one icon. See [validation results](docs/validation.md) for actual measured results and limitations. Evaluation manifests support manually labeled **real** crops and unknown-card examples; see [reference/evaluation formats](docs/reference-manifest.md).
+
+## Design and research
+
+- [Data sources, access checks and licensing limitations](docs/data-sources.md)
+- [Architecture, schema boundaries, highest risks and future optimizer](docs/architecture.md)
+- [Milestone handoff and validation](docs/validation.md)
+
+No game art, source dumps, collection databases, recordings, credentials or private player data should be committed. Upstream code licenses do not automatically license game/collaboration artwork. This repository contains original importer code and procedural fixture generators; downloaded references stay local.
