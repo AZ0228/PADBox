@@ -6,6 +6,7 @@ import pytest
 
 from padbox.demo import render_grid
 from padbox.detection.grid import detect
+from padbox.inventory.tracking import align
 from padbox.models import Layout
 
 
@@ -59,6 +60,32 @@ def test_calibration_scales_with_screen(fixtures):
     assert cells[0].rect == [40, 160, 160, 160]
 
 
+def test_scroll_overlap_preserves_physical_copies(fixtures):
+    image = cv2.imread(str(fixtures["image"]))
+    shifted = cv2.imread(str(fixtures["image"].with_name("box-shifted.png")))
+    before, after = detect(image), detect(shifted)
+    result = align(before, after)
+    assert result.certain
+    assert len(result.links) == 10
+    assert result.links[0] == 5
+    assert result.links[9] == 14
+    # Two identical monsters occupy different cells in one frame.
+    assert before[0].rect != before[2].rect
+
+
+def test_repeated_patterns_preserve_ambiguity(fixtures):
+    image = render_grid([icons(fixtures)[0]] * 15)
+    result = align(detect(image), detect(image))
+    assert not result.certain
+    assert not result.links
+
+
+def test_insufficient_overlap_is_ambiguous(fixtures):
+    before = detect(cv2.imread(str(fixtures["image"])))
+    after = detect(render_grid(icons(fixtures)[::-1]))
+    assert not align(before, after).certain
+
+
 def test_low_contrast_grid_fallback():
     # Original procedural flat backgrounds: insufficient contrast for strong Canny pass.
     image = render_grid([np.full((80, 80, 3), 8, dtype=np.uint8)] * 15)
@@ -89,3 +116,24 @@ def test_scroll_calibration_rejects_blank_screen():
         columns=5, x=0.04, y=0.2, size=0.16, step_x=0.188, step_y=0.22, follow_scroll=True
     )
     assert detect(np.zeros((430, 500, 3), dtype=np.uint8), layout) == []
+
+
+def test_optical_flow_checks_forward_backward_motion(fixtures):
+    from padbox.inventory.tracking import _flow_alignment
+
+    before = render_grid(icons(fixtures), y=80)
+    shifted = render_grid(icons(fixtures), y=60)
+    after = (shifted.astype(np.float32) * 0.85).astype(np.uint8)
+    previous, current = detect(before), detect(after)
+    result = _flow_alignment(previous, current, before, after)
+    assert result is not None
+    assert result.certain
+    assert len(result.links) == 15
+    assert "optical flow" in result.reason
+
+
+def test_optical_flow_does_not_resolve_identical_rows(fixtures):
+    from padbox.inventory.tracking import _flow_alignment
+
+    before = render_grid([icons(fixtures)[0]] * 15)
+    assert _flow_alignment(detect(before), detect(before), before, before) is None
