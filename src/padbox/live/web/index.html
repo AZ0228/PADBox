@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="padbox-token" content="__PADBOX_TOKEN__" />
+    <title>PADBox · Live scan</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <header>
+      <div>
+        <span class="eyebrow">LOCAL · NORTH AMERICA</span>
+        <h1>PADBox <span>Live scan</span></h1>
+      </div>
+      <div id="connection" class="badge">Connecting…</div>
+    </header>
+    <main>
+      <section class="panel setup">
+        <h2>1. Connect your iPhone preview</h2>
+        <p>
+          Connect your iPhone by USB. In QuickTime choose
+          <strong>File → New Movie Recording → your iPhone</strong>. Keep PAD
+          open and select that QuickTime window below. No audio is captured.
+        </p>
+        <div class="toolbar">
+          <button id="choose">Choose preview window</button
+          ><button id="crop" disabled>Crop to phone screen</button
+          ><button id="reset-crop" disabled>Use whole window</button
+          ><button id="disconnect" disabled>Disconnect</button>
+        </div>
+        <p id="capture-help" class="muted">
+          Chrome or Edge on your Mac is recommended. The browser and macOS will
+          ask for screen-sharing permission.
+        </p>
+        <details id="capture-details">
+          <summary>Preview and phone-screen crop</summary>
+          <p>
+            Drag a rectangle around the complete iPhone screen, excluding
+            QuickTime window borders and letterboxing. Include the same phone
+            area used during calibration. Crop is locked after a session starts.
+          </p>
+          <div class="source-wrap">
+            <video id="source" autoplay muted playsinline></video
+            ><canvas id="crop-overlay"></canvas>
+          </div>
+        </details>
+      </section>
+      <section class="panel setup">
+        <h2>2. Set up this scan</h2>
+        <div class="row">
+          <label
+            >Session name<input
+              id="session-name"
+              value="Live box scan"
+              maxlength="100" /></label
+          >
+        <p>Each scan captures your entire unfiltered box as a replacement draft.
+          Strong matches are accepted in the draft. Your current box changes only
+          after you review the diff and click Apply.</p>
+        </div>
+        <details>
+          <summary>Layout calibration</summary>
+          <p>
+            Layout coordinates refer to the cropped phone image. Load the same
+            layout used for your recording or edit it here. Resizing the
+            QuickTime window is safe only if the phone framing stays identical.
+          </p>
+          <label
+            >Load layout JSON<input
+              id="layout-file"
+              type="file"
+              accept=".json,application/json" /></label
+          ><textarea
+            id="layout"
+            spellcheck="false"
+            rows="8"
+            aria-label="Layout JSON"
+          ></textarea
+          ><button id="save-layout">Download layout</button>
+        </details>
+      </section>
+        <div class="toolbar scan-controls" aria-label="Scan controls">
+          <button id="start" disabled>Start new scan</button
+          ><select id="sessions" aria-label="Saved sessions">
+            <option value="">Choose a saved session</option></select
+          ><button id="load">Load session</button
+          ><button id="resume" disabled>Resume scanning</button
+          ><button id="pause" disabled>Pause to review</button
+          ><button id="finish" disabled>Finish capture</button>
+          <label class="inline" title="Off by default. Tracking warnings remain saved for review without interrupting capture.">
+            <input type="checkbox" id="auto-pause" /> Pause on tracking warnings (optional)
+          </label>
+        </div>
+      <div id="notice" role="status" class="notice">
+        Choose the iPhone preview to begin a full-box replacement draft.
+      </div>
+      <div id="metrics" class="metrics"></div>
+      <section class="workspace" id="workspace" aria-label="Side-by-side capture and monster box">
+        <div class="panel scan-panel">
+          <div class="row panel-heading">
+            <h2>Live detections</h2>
+            <span id="scan-state" class="badge">Waiting</span>
+          </div>
+          <p class="muted panel-intro">
+            Click any outlined icon to inspect or correct it, including automatically accepted matches.
+          </p>
+          <div id="processed-wrap" class="phone-stage">
+            <img
+              id="processed"
+              alt="Most recently processed phone frame"
+              hidden
+            />
+            <div id="boxes"></div>
+            <p id="empty-preview">The first captured frame will appear here.</p>
+          </div>
+          <p id="timing" class="muted"></p>
+        </div>
+        <div class="panel review-panel">
+          <div class="row panel-heading">
+            <h2 id="review-panel-title">Reconstructed monster box</h2>
+            <button id="close-review" hidden>Back to box</button>
+          </div>
+          <p id="review-help" class="muted panel-intro">
+            Reference icons follow the captured rows. Click any icon to review.
+          </p>
+          <div id="reconstruction">
+            <div class="map-toolbar">
+              <span id="map-position" class="muted">Map grows as you scan</span>
+              <button id="follow-live" hidden>Follow live</button>
+            </div>
+            <div class="reconstruction-layout">
+            <aside class="minimap-rail" aria-label="Box map overview">
+              <canvas id="box-minimap" tabindex="0" role="slider" aria-orientation="vertical"
+                aria-label="Browse mapped monster box rows" aria-valuemin="0" aria-valuemax="100"
+                aria-valuenow="0" title="Drag, scroll or use arrow keys to browse scanned rows. This does not scroll the iPhone."></canvas>
+            </aside>
+            <div id="reconstructed-wrap" class="phone-stage" aria-label="Reconstructed monster box">
+              <div class="box-context">
+                <span class="eyebrow">THIS SCAN</span>
+                <p id="reconstructed-meta">Waiting for capture</p>
+                <p class="muted">✓ Accepted · ? Match · ↔? Copy count · ×? Stack quantity</p>
+              </div>
+              <div id="reconstructed-cells"></div>
+              <p id="reconstructed-empty">The resolved icons will appear alongside the first captured frame.</p>
+            </div>
+            </div>
+            <p class="muted map-help">Minimap: cyan = last captured window; white = browsing.
+              Drag to inspect scanned rows. Unjoined sections stay separate.</p>
+            <p id="reconstructed-timing" class="muted">Aligned to the latest processed frame.</p>
+          </div>
+          <div id="review" tabindex="-1" hidden>
+            <div class="review-navigation toolbar" aria-label="Review queue navigation">
+              <button id="review-previous" title="Previous entry (K or left arrow)">← Previous</button>
+              <button id="review-next" title="Skip to next entry (J or right arrow)">Next →</button>
+              <span id="review-progress" role="status"></span>
+            </div>
+            <p id="review-remaining" class="muted"></p>
+            <p class="muted review-keys"><kbd>A</kbd> accept · <kbd>X</kbd> reject ·
+              <kbd>J</kbd>/<kbd>K</kbd> next/previous · <kbd>1</kbd>–<kbd>3</kbd> choose alternative</p>
+            <p id="entry-title"></p>
+            <p id="entry-meta" class="muted"></p>
+            <div class="comparison">
+              <div>
+                <span class="eyebrow">CAPTURE</span
+                ><img id="entry-crop" alt="Captured monster icon" />
+              </div>
+              <div>
+                <span class="eyebrow">REFERENCE</span
+                ><img id="entry-reference" alt="Selected reference icon" />
+              </div>
+            </div>
+            <div id="entry-warning" class="notice" hidden></div>
+            <div id="alternatives"></div>
+            <label
+              >Search or enter the correct monster ID<input
+                id="search"
+                placeholder="Monster name or ID" /></label
+            ><select id="search-results" aria-label="Search results">
+              <option value="">Select a search result</option></select
+            ><label
+              >Chosen monster ID<input
+                id="monster-id"
+                inputmode="numeric"
+                type="number"
+                min="1" /></label
+            ><label id="distinct-label" class="inline"
+              ><input id="distinct" type="checkbox" /> I verified this is a
+              separate owned copy</label
+            >
+            <div class="toolbar">
+              <button id="accept">Accept identity</button
+              ><button id="reject">Reject detection</button>
+            </div>
+            <label>Copies in this slot (verify displayed xN for stacks)
+              <input id="entry-quantity" type="number" min="1" max="10000" value="1" /></label>
+            <button id="save-quantity">Verify slot quantity</button>
+            <details>
+              <summary>Repeated view of a copy in this scan?</summary>
+              <label
+                >Find an existing copy<input
+                  id="merge-search"
+                  placeholder="Name, monster ID or local ID" /></label
+              ><select id="merge-target" aria-label="Merge target"></select
+              ><img id="merge-crop" alt="Existing copy crop" hidden /><button
+                id="merge"
+              >
+                Merge into selected copy
+              </button>
+            </details>
+          </div>
+        </div>
+      </section>
+      <section class="panel" id="batch-review">
+        <h2>Batch accept identities</h2>
+        <p>Accept proposed IDs above your chosen similarity and separation thresholds.
+          Scores measure visual similarity, not probability. Copy ambiguities and unmatched
+          icons stay in review; accepting a stack identity still requires its xN quantity check.</p>
+        <div class="batch-thresholds">
+          <label>Minimum similarity
+            <input id="batch-score" type="number" min="0" max="1" step="0.01" value="0.80" /></label>
+          <label>Minimum lead over alternatives
+            <input id="batch-margin" type="number" min="0" max="1" step="0.01" value="0.04" /></label>
+        </div>
+        <button id="batch-preview" disabled>Preview qualifying matches</button>
+        <p id="batch-summary" role="status">Load a completed or paused draft to batch review.</p>
+        <div id="batch-bands" class="toolbar"></div>
+        <p class="muted">Preview shows the weakest qualifying matches first. Lowering either
+          threshold accepts more proposals and may include similar variants.
+          Going below 0.60 does not include unmatched icons: they have no proposed ID.</p>
+        <div id="batch-samples"></div>
+        <button id="batch-accept" disabled>Accept qualifying identities</button>
+      </section>
+      <section class="panel">
+        <div class="row">
+          <h2>Session entries</h2>
+          <label class="inline"
+            ><input type="checkbox" id="unreviewed" checked /> Needs review
+            only</label
+          >
+        </div>
+        <div class="review-queue-controls">
+          <label>Review queue
+            <select id="review-filter" aria-label="Review queue">
+              <option value="pending">Needs review</option>
+              <option value="identity">Identities only</option>
+              <option value="unmatched">Unmatched only</option>
+              <option value="tracking">Copy tracking only</option>
+              <option value="quantity">Stack quantities only</option>
+              <option value="all">All active entries</option>
+            </select></label>
+          <label>Review order
+            <select id="review-order" aria-label="Review order">
+              <option value="box">Box order</option>
+              <option value="lowest">Lowest similarity first</option>
+              <option value="highest">Highest similarity first</option>
+            </select></label>
+          <label class="inline"><input id="review-auto-next" type="checkbox" checked />
+            Advance after resolving an entry</label>
+          <button id="start-review" disabled>Review next unresolved entry</button>
+        </div>
+        <p id="queue-summary" class="muted"></p>
+        <div class="row">
+          <button id="stack-quantity-one" disabled>Use quantity 1 for all pending stacks</button>
+          <span id="stack-quantity-summary" class="muted"></span>
+        </div>
+        <p class="muted">Skip exact material counts: count each pending stack as 1 and resolve its
+          quantity check. Already verified quantities are kept. Applies to this whole draft.</p>
+        <details class="shortcut-help"><summary>Keyboard shortcuts</summary>
+          <p><kbd>R</kbd> open review · <kbd>A</kbd> accept chosen identity · <kbd>X</kbd> reject
+            detection · <kbd>J</kbd>/<kbd>→</kbd> next/skip · <kbd>K</kbd>/<kbd>←</kbd> previous ·
+            <kbd>1</kbd>–<kbd>3</kbd> choose alternative · <kbd>/</kbd> search · <kbd>I</kbd> monster ID ·
+            <kbd>Q</kbd> quantity · <kbd>V</kbd> verify quantity · <kbd>D</kbd> toggle separate-copy verification ·
+            <kbd>Esc</kbd> leave a field, then return to box.</p>
+          <p>Shortcuts do not run while typing, holding a modifier key, or saving a decision.
+            Alternatives only select an ID; press A to accept it. Next/previous skips without saving.</p>
+        </details>
+        <p class="muted">
+          One entry per detected slot. Verify stacked xN quantities above.
+          Finished drafts stay editable; applied scans remain read-only history.
+        </p>
+        <div id="entry-list"></div>
+        <details><summary>Add a missed entry to this draft</summary>
+          <label>Monster ID<input id="add-id" type="number" min="1" /></label>
+          <label>Separate slots<input id="add-count" type="number" min="1" max="10000" value="1" /></label>
+          <button id="add-entry">Add to draft</button>
+        </details>
+        <div class="toolbar">
+          <button id="export-json">Export collection JSON</button
+          ><button id="export-csv">Export collection CSV</button
+          ><a
+            id="review-link"
+            href="http://127.0.0.1:8501"
+            target="_blank"
+            rel="noopener"
+            >Open full collection review ↗</a
+          >
+        </div>
+      </section>
+      <section class="panel" id="replacement">
+        <h2>3. Review changes and replace your box</h2>
+        <p>Finish capture, resolve outstanding entries, then preview everything
+          added or removed. Applying replaces the whole saved box with this scan.
+          Cards absent from the scan are removed. Prior snapshots remain in history.</p>
+        <button id="preview-diff" disabled>Preview changes</button>
+        <div id="diff-summary" role="status">Finish a full-box draft to preview changes.</div>
+        <div id="diff-table"></div>
+        <label class="inline"><input type="checkbox" id="full-box" />
+          I captured the complete unfiltered box from first to last row and verified counts.</label>
+        <label>Expected visible inventory slots (optional count check)
+          <input id="expected-slots" type="number" min="1" placeholder="Exclude stack quantities" /></label>
+        <button id="apply-scan" disabled>Apply scan — replace entire box</button>
+        <p id="applied-state" class="muted"></p>
+        <details><summary>Applied scan history</summary>
+          <button id="refresh-history">Refresh history</button><div id="history-list"></div>
+        </details>
+      </section>
+    </main>
+    <footer>
+      Only selected, cropped samples are sent to this Mac. Strong matches are accepted in the draft; replacing your box requires Apply.
+    </footer>
+  </body>
+</html>
