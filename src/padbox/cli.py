@@ -2,6 +2,9 @@
 
 import json
 import logging
+import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import Annotated
 
@@ -115,6 +118,33 @@ def inspect(
     if not cv2.imwrite(str(output), annotate(frame.image, cells)):
         raise typer.BadParameter("Failed writing inspection image")
     emit({"metadata": metadata(recording), "cells": len(cells), "preview": output.resolve()})
+
+
+@app.command()
+def review(ctx: typer.Context, port: int = 8501) -> None:
+    """Launch local review UI, bound to localhost."""
+    script = Path(__file__).parent / "review" / "app.py"
+    environment = {**os.environ, "PADBOX_HOME": str(ctx.obj.home)}
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "streamlit",
+            "run",
+            str(script),
+            "--server.address",
+            "127.0.0.1",
+            "--server.port",
+            str(port),
+            "--server.headless",
+            "true",
+            "--browser.gatherUsageStats",
+            "false",
+        ],
+        env=environment,
+        check=False,
+    )
+    raise typer.Exit(result.returncode)
 
 
 @app.command("export")

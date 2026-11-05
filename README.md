@@ -66,6 +66,92 @@ Coordinates are normalized, not tied to an iPhone pixel resolution. Automatic de
 
 Every processed frame gets an annotated preview under `.padbox/recordings/<sha256>/`. Failed empty imports can retry with a corrected layout. Once observations exist, changing sampling/layout requires a separate `--home` so existing reviewed evidence cannot be overwritten. Identical-file imports with the same settings are idempotent; failed runs resume existing observations. Re-encoded files have different hashes and are treated as new recordings.
 
+## Review and corrections
+
+The live page has a keyboard review queue under **Session entries**. Load a saved scan,
+then press **R** or click **Review next unresolved entry**. Accepting or rejecting advances
+automatically, keeping the comparison pane open. Choose box order, lowest similarity first,
+or highest similarity first, and filter for unresolved identities, unmatched entries, copy
+tracking, stack quantities, or all entries. Separate copies remain separate queue items.
+
+| Key | Action |
+| --- | --- |
+| **A** / **X** | Accept the chosen identity / reject the detection |
+| **J** or **→** / **K** or **←** | Next / previous queued entry, without saving |
+| **1–3** | Choose an alternative; press **A** to accept it |
+| **/** / **I** / **Q** | Focus search / monster ID / quantity |
+| **V** | Verify the entered slot quantity |
+| **D** | Toggle the explicit separate-copy confirmation |
+| **Escape** | Leave a text field; press again to return to the box |
+
+Shortcuts do not act while typing, holding a key, using modifier keys, or saving a decision.
+A failed save keeps the current entry and your choice open. The default unresolved queue
+keeps stackable entries open until both identity and quantity are verified. Use **Identities
+only** for an ID approval pass; quantities remain pending afterward. Uncheck **Advance after
+resolving an entry** to stay on each resolved entry. Applied history remains read-only, and
+approvals only update the draft; **Preview changes → Apply scan** still replaces ownership.
+
+If exact material counts do not matter, click **Use quantity 1 for all pending stacks**
+under **Session entries**. This sets every unresolved stack in the selected draft to 1
+and resolves its quantity check, including entries outside the current queue/filter.
+Already verified counts are kept. Separate slots stay separate; IDs and copy-tracking
+issues still require approval. The same action is available in Streamlit. It works on
+paused/completed drafts without a source connection. Counts exported after Apply use
+these assumed values. Each decision is saved; you can still edit a slot quantity before Apply.
+
+For a completed scan with many overlay-obscured proposals, use **Batch accept identities**
+on the live page, immediately above Session entries. Load your existing saved scan; a source
+connection or rescan is unnecessary. The Streamlit Review workspace has the same controls.
+
+1. Set **Minimum similarity** (default **0.80**) and **Minimum lead over alternatives**
+   (default **0.04**). Both accept any value from **0 to 1**. The lead is the best score
+   minus the strongest alternative. The review threshold can go below 0.60; unmatched
+   detections still stay excluded because they have no proposed ID.
+2. Click **Preview qualifying matches**. The preview shows the qualifying count, excluded
+   reasons, remaining identities and stack-quantity checks. Threshold-band buttons show how
+   many qualify at other similarity levels while retaining your selected lead. Click a band
+   to preview it. Lower thresholds accept more proposals and can include similar variants.
+3. Compare the weakest qualifying captures and references first. The initial gallery shows
+   24 entries; **Show more** loads another 24. Click any example for individual review.
+4. Click **Accept N qualifying identities** to accept that exact preview in the draft.
+   Changing thresholds or reviewing entries requires a fresh preview. Changes made from
+   another tab invalidate the acceptance token as well. Each accepted copy has an audit event.
+5. Resolve remaining identities and quantities, then use the existing **Preview changes →
+   Apply scan** workflow to replace saved ownership.
+
+Only uncertain identities with clear copy tracking, a local NA reference and saved ranked
+evidence matching the proposal/score can qualify. Unmatched entries, exact ties, merged/rejected
+copies and previous identity decisions are excluded. Stack identities can be accepted, but their
+quantities remain unverified until explicitly checked. Batch acceptance preserves copy IDs,
+duplicate counts, quantities, tracking and applied history. It does not change the automatic
+matcher thresholds or turn a similarity score into a probability; this is your explicit bulk
+review decision. **0.80 does not mean 80% accuracy.**
+
+- Inspect the recording crop, proposed reference icon, similarity score, and alternatives. Search metadata by name or ID to correct a proposal.
+- Strong, separated matches with clear tracking are accepted automatically inside new drafts. Inspect or correct them by disabling “Needs review only” / enabling “Include reviewed entries.” Lower-confidence results require acceptance. Similarity is not a probability.
+- Resolve uncertain slot identity by checking **separate owned copy** or merging it into a known existing inventory entry. Entries visible in the same frame cannot be merged, including through prior merges.
+- Reject false grid detections. Rejected/merged entries and review history remain stored as evidence.
+- Add missed slots by ID to the selected draft. Verify stack quantities per slot. Unresolved observations remain separate when adjusting a count.
+
+```sh
+uv run padbox add 13966 --quantity 1 --scan SCAN_ID
+uv run padbox entry-quantity INVENTORY_UUID 12  # Stackable items only
+uv run padbox accept INVENTORY_UUID 13966
+# Only after verifying that an ambiguous observation represents a separate slot:
+uv run padbox accept INVENTORY_UUID 13966 --distinct
+uv run padbox stats                 # Applied box
+uv run padbox stats --scan SCAN_ID  # Draft
+```
+
+The matcher uses masked artwork, DCT hash, color histograms, pixel similarity and template correlation. Larger libraries use vectorized hash/color retrieval followed by reranking of 96 candidates. Full-library retrieval recall and thresholds still need real-data evaluation. To add more reference icons after an import and refresh unreviewed proposals:
+
+```sh
+uv run padbox sources sync --ids 1234,5678
+uv run padbox rematch
+```
+
+Accepted identities, rejected entries and manually reviewed decisions are preserved. Later unobscured observations can improve an unreviewed proposal. Stackable references require identity and displayed xN quantity review before Apply. Single-frame automatic acceptance requires similarity ≥0.94 with a ≥0.055 lead over the next candidate, at least three references, and a non-stackable item. A second path accepts a non-stackable proposal after **three consecutive processed observations from distinct frames** agree on the ID, each with similarity ≥0.85 and a ≥0.055 lead, with at least three candidates. Both paths require clear copy tracking and preserve manual decisions. Exact unchanged frames skipped by the sampler do not count as additional evidence. The audit records the acceptance rule and supporting frame indices. Repetition measures consistency, not independent correctness; neither threshold has been calibrated against independently labeled real scans.
+
 ## Full-box snapshots and duplicate copies
 
 Each detected slot has its own local UUID. Within a scan, overlapping frames and scrolling backward reuse tracked slots; genuinely separate copies retain separate entries. A tracking gap remains a reviewable ambiguity. Do not deduplicate by monster ID.
