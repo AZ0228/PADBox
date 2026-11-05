@@ -332,6 +332,102 @@ def scan_history(ctx: typer.Context) -> None:
     emit(history(ctx.obj))
 
 
+@app.command()
+def explain(ctx: typer.Context, monster_id: int) -> None:
+    """Show verified skill effects for a monster and its transform/assist forms."""
+    from padbox.mechanics.explain import explain_monster
+
+    try:
+        emit(explain_monster(ctx.obj, monster_id))
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@app.command()
+def cover(
+    ctx: typer.Context,
+    leader: int,
+    helper: Annotated[
+        int | None, typer.Option(help="Borrowed helper; it does not need to be owned")
+    ] = None,
+    output: Annotated[Path | None, typer.Option(help="Write the report JSON")] = None,
+) -> None:
+    """Report coverage holes for one leader against the applied box."""
+    from padbox.mechanics.coverage import cover_box
+
+    try:
+        report = cover_box(ctx.obj, leader, helper)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report, indent=2) + "\n")
+    emit(report)
+
+
+@app.command()
+def pool(
+    ctx: typer.Context,
+    leader: int,
+    helper: Annotated[
+        int | None, typer.Option(help="Borrowed helper; it does not need to be owned")
+    ] = None,
+    output: Annotated[Path | None, typer.Option(help="Write the pool JSON")] = None,
+) -> None:
+    """List owned and reachable forms that might fill this leader's holes."""
+    from padbox.mechanics.team import pool_box
+
+    try:
+        report = pool_box(ctx.obj, leader, helper)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report, indent=2) + "\n")
+    emit(report)
+
+
+@app.command()
+def shortlist(
+    ctx: typer.Context,
+    leader: int,
+    helper: Annotated[
+        int | None, typer.Option(help="Borrowed helper; it does not need to be owned")
+    ] = None,
+    output: Annotated[Path | None, typer.Option(help="Write the shortlist JSON")] = None,
+) -> None:
+    """List the best subs for each requirement, with assist options."""
+    from padbox.mechanics.team import shortlist_box
+
+    try:
+        report = shortlist_box(ctx.obj, leader, helper)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report, indent=2) + "\n")
+    emit(report)
+
+
+@app.command("check-team")
+def check_team_command(
+    ctx: typer.Context,
+    leader: int,
+    team: Annotated[Path, typer.Argument(help="JSON file naming subs and assists")],
+) -> None:
+    """Check a named team for copy conflicts, unreachable forms, and open holes."""
+    from padbox.mechanics.team import check_team
+
+    try:
+        payload = json.loads(team.read_text())
+        if not isinstance(payload, dict):
+            raise ValueError("Team file must be an object")
+        report = check_team(ctx.obj, leader, payload)
+    except (ValueError, OSError, json.JSONDecodeError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    emit(report)
+
+
 @app.command("evaluate")
 def evaluate_command(ctx: typer.Context, labels: Path, output: Path | None = None) -> None:
     report = evaluate(Matcher(ctx.obj.references()), labels)

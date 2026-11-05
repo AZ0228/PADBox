@@ -1,0 +1,269 @@
+---
+title: "PADBox team evaluator and optimizer"
+description: "Turn PADBox's team checks into a trustworthy evaluator and an explainable optimizer over the owned collection."
+---
+
+# PADBox team evaluator and optimizer
+
+<!-- relay-plan
+format: 1
+defaults:
+  preview: none
+  agent: codex
+  gate: auto
+  cwd: repos/PADBox
+-->
+
+PADBox can pool, shortlist and check a named team, but it cannot judge or build one. This plan fixes the validation the audit found unsound, makes the mechanics model describe game state, adds a deterministic simulator and evaluator, and only then adds search, dungeon profiles and the CLI.
+
+## Background
+
+The full brief is `docs/team-optimizer-brief.md`; each step names the sections it needs. The audit is `docs/team-builder-audit.md`, with issues `TB-01`…`TB-20` in `docs/team-builder-issues.md` and the old heuristics in `docs/team-builder-scoring.md` and `docs/team-builder-trace.json`. Treat the audit as a starting point and verify each claim against the code before acting on it. Where the brief and the decisions below differ, the decisions govern.
+
+## Decisions
+
+Settled for this plan. Hard-code them; do not build configuration for them.
+
+- **Layers.** Layer A (mechanics, never selects teams) stays in `padbox.mechanics`. Layer B (evaluator, never searches) is the new package `padbox.evaluator`, with the simulator in `padbox.evaluator.sim`. Layer C (search) is the new package `padbox.optimizer`. Each layer has its own tests.
+- **CLI.** The existing `padbox evaluate` is the recognition-accuracy command and stays unchanged. New commands live in a `padbox team` group: `team evaluate --team FILE`, `team optimize --leader ID [--helper ID] [--dungeon FILE] [--objective NAME]`, `team compare A B`. `pool`, `shortlist` and `check-team` keep working; `check-team` reports the new validation fields.
+- **Card data.** The only source of truth is the pinned public PADDashFormation NA snapshot (2026-10-30) that `padbox sources sync` already uses. Regression cards are committed as small extracts in `tests/fixtures/cards/`, each with snapshot commit, monster ID and the raw skill fields used. No expectation may come from memory or wiki text.
+- **Board.** 6×5 only. Other sizes are reported as unsupported.
+- **Matching policy.** A deterministic greedy policy, documented in `docs/team-evaluator.md`. There is no orb-path solver, so every activation rate is labelled an approximation of what the policy achieves, not of human play.
+- **Simulation defaults.** 10 turns, 1,000 Monte Carlo boards, seed 0. All three are flags, and every report records them.
+- **Default objective.** `general`: exclude invalid teams, flag unresolved feasibility, then rank by activation consistency, survivability, damage and flexibility in that order. `farming`, `high-difficulty`, `boss-damage`, `consistent` and `fast` reorder or reweight the same component metrics. All formulas live in `docs/scoring-model.md`.
+- **Search.** A staged beam search: broad candidate pool, constraint filter, cheap deterministic evaluation, a diverse beam (default width 200), full simulation of finalists only, then assists for the shortlist. No new optimization dependency.
+- **Helpers.** Use an explicit `--helper`, or the user's own copies. Never assume a friend's helper exists.
+- **Out of scope.** The Streamlit and live capture UI, authenticated game endpoints, real dungeon data (schema and the brief's example only), and claims of global optimality.
+
+## Rules for every step
+
+- Follow `AGENTS.md`: uv with Python 3.12, pytest and ruff. Run focused tests while working; the phase bundle runs the full suite once.
+- Do not change scanning, recognition, inventory, snapshots or the existing `evaluate` command. No destructive SQLite migrations.
+- Unknown is a value. Missing decoder output never means "no mechanic", and unknowns never silently pass or fail a hard requirement.
+- Never weaken an existing test to make new behavior pass; change an assertion only when the audit shows it encoded a bug, and say so in the test.
+- Commits carry no co-author or tool trailers.
+
+## Phase 1 — Validation semantics and correctness
+<!-- relay-phase
+cwd: repos/PADBox
+verify:
+  - cwd: repos/PADBox
+    command: "uv run pytest -q"
+    label: "Full test suite"
+  - cwd: repos/PADBox
+    command: "uv run ruff check src tests"
+    label: "Lint"
+-->
+
+### Step 1.1 — Authorize the evaluator and optimizer in project guidance
+<!-- relay-step
+instruction: |
+  `AGENTS.md` ends with "Do not add a search that scores or assigns a best team." This plan explicitly authorizes one. Replace that sentence with guidance that keeps the three layers from this plan's Decisions apart and forbids claiming optimality without a stated objective and search scope. Update the team-building section of `docs/architecture.md` to describe the three layers and the `padbox team` command group. Keep every scanner rule in `AGENTS.md` unchanged.
+-->
+
+### Step 1.2 — Split the overloaded `ok` and enforce team shape
+<!-- relay-step
+instruction: |
+  Read brief §4.1 and issues TB-01, TB-13 and TB-18. In `src/padbox/mechanics/team.py` (`_check`, `_requirements`, `_subs`) and the slot logic in `coverage.py`, replace the single `ok` with `ownership_valid`, `evolution_feasible`, `team_structure_valid`, `team_complete`, `transform_feasible`, `mechanics_coverage`, `strategic_quality` (always `not_evaluated` until Phase 4) and `unknowns`. A standard team is one leader, four subs and one helper; a missing helper never opens a fifth sub slot. Partial teams can still be checked but report `team_complete: false`. Keep `ok`, deprecated, equal to every hard check passing on a complete team. Rename copy-count fields that describe groups (TB-18) with the old names kept as deprecated aliases.
+-->
+
+### Step 1.3 — Three-valued transform and decoder results
+<!-- relay-step
+instruction: |
+  Read brief §4.2 and issues TB-02, TB-03 and TB-04. Add a `pass | fail | unknown` result type in `padbox.mechanics` and use it for transform readiness and for any requirement that depends on decoder output. An unresolved leader or helper transform is `unknown`, never a zero-turn pass, and must not hide a known requirement from another member. Include selected subs' transform cooldowns in the Skill Boost requirement (Saphira #7095 → #7096 is the motivating case). Entry, transformed and inherited actives of one monster are alternative states, not a pool of simultaneous effects.
+-->
+
+### Step 1.4 — Ownership and evolution feasibility
+<!-- relay-step
+instruction: |
+  Read brief §4.3 and issues TB-08, TB-12, TB-15 and TB-19. Validate copy limits across leader, subs and assists; a reserved leader copy; mutually exclusive forms of one copy; evolution paths including material consumption, transform base forms and special requirements; and pinned alternate forms needing a spare copy. Report exact results separately from assumptions about untracked stackable materials. Put the leader's evolution investment in the check output.
+-->
+
+### Step 1.5 — Regression tests for the high-priority audit issues
+<!-- relay-step
+instruction: |
+  For every high-priority issue in `docs/team-builder-issues.md` not already covered by Steps 1.2–1.4, add a regression test in `tests/test_team.py` or `tests/test_mechanics.py`. Cover at least leader plus five subs with no helper, leader plus one sub, a missing transform active, an unresolved helper beside a known leader requirement, and a sub transform costlier than the leader's. Record each issue's new status in `docs/team-builder-issues.md`.
+-->
+
+## Phase 2 — Mechanics decoding, skill state and provenance
+<!-- relay-phase
+cwd: repos/PADBox
+verify:
+  - cwd: repos/PADBox
+    command: "uv run pytest -q"
+    label: "Full test suite"
+  - cwd: repos/PADBox
+    command: "uv run ruff check src tests"
+    label: "Lint"
+-->
+
+### Step 2.1 — Verified regression card fixtures
+<!-- relay-step
+instruction: |
+  Read brief §5.5 and §11 Regression tests, and issue TB-20. Using `uv run padbox sources sync --ids …` against the pinned snapshot, extract into `tests/fixtures/cards/` every card the regression lineups need: Rozé #13966 → #13967, Ultraman Gaia (V2) #8336 (not #8736), Super Reincarnated Apollo #7844, Ordeal Venus #10756, Paladin #7949, Saphira #7095 → #7096, and the Ciel, Kushinadahime, Rathios, Pixel Lightning and Leona forms from the earlier lineup. Confirm each ID's name and skills in the snapshot. Each fixture carries its provenance per the Decisions, and a loader in `tests/conftest.py` builds a store from them with no network.
+-->
+
+### Step 2.2 — Structured effects with provenance
+<!-- relay-step
+instruction: |
+  Read brief §5.1 and §5.4. Extend `src/padbox/mechanics/decode.py` so each effect in the §5.1 list is a typed Pydantic model carrying parameters (orb colors, counts, source colors, durations, multipliers), plus provenance: source, decoder version, evidence level, supported and unknown parameters, and verification status. Keep syntactic decoding separate from verified semantics. Effects that interact or are conditional stay grouped, not flattened. Anything unrecognized becomes an explicit unsupported effect. Test against the Step 2.1 fixtures.
+-->
+
+### Step 2.3 — Skill lifecycle state machines
+<!-- relay-step
+instruction: |
+  Read brief §5.2 and §6.2's note on mutually exclusive actives. Add `src/padbox/mechanics/skill_state.py`: a skill is a set of states (base, transformed, each stage of an evolving skill, inherited) with transitions, cooldowns and whether an evolving sequence loops or ends. A monster has one usable active per turn according to its state. Model Gaia's evolving active, Rozé's transform and Saphira's entry transform from the fixtures. Write `docs/skill-state-model.md`.
+-->
+
+### Step 2.4 — Leader skill clauses
+<!-- relay-step
+instruction: |
+  Read brief §5.3. Represent leader skills as independent clauses, each with its own condition (attribute, type, linked count, cross, L, row, combos, HP threshold, multi-color) and effect (multiplier, damage reduction, added combos, fixed damage, move time, shield). Rozé's five-linked-Light reduction and Light-cross offense must be two clauses evaluated separately. Unparsed clauses are explicit unknowns. Start `docs/known-mechanics-gaps.md` with every effect and clause that is still unsupported.
+-->
+
+## Phase 3 — Deterministic turn-based simulator
+<!-- relay-phase
+cwd: repos/PADBox
+verify:
+  - cwd: repos/PADBox
+    command: "uv run pytest -q"
+    label: "Full test suite"
+  - cwd: repos/PADBox
+    command: "uv run ruff check src tests"
+    label: "Lint"
+-->
+
+### Step 3.1 — Game state and skill scheduling
+<!-- relay-step
+instruction: |
+  Read brief §6.1 and §6.2. In `src/padbox/evaluator/sim/`, add a typed game state (turn, members and current forms, cooldowns, evolving stages, assist cooldowns, effect durations, board, locks, HP, RCV, shields, awakenings) and a scheduler for starting cooldowns, initial Skill Boosts, transform readiness, haste, delay, assist inheritance and overcharge, and durations, using the Phase 2 state machines. Use a fixed skill-use policy, documented in `docs/team-evaluator.md`. Property-test that no active fires before it is ready and no transform happens before its prerequisites.
+-->
+
+### Step 3.2 — Board, orb generation and matching
+<!-- relay-step
+instruction: |
+  Read brief §6.3. Model a 6×5 board with locks and skyfall, apply skill-generated board changes with their real quantities and source colors, and implement the greedy matching policy from the Decisions. It must tell five linked Light orbs from a Light cross, account for heal orbs used or kept, and report each leader clause as met or missed per turn. Label activation results as policy approximations.
+-->
+
+### Step 3.3 — Simulation modes and metrics
+<!-- relay-step
+instruction: |
+  Read brief §6.4 and §6.5. Add deterministic scenario mode (fixed board sequence) and Monte Carlo mode (seeded boards, defaults from the Decisions) that report the simulation count, turns, seeds, assumptions and confidence intervals. Report only the §6.5 metrics the simulator actually computes, each with failure reasons. Add the milestone test: two teams that differ only in their generator rotation produce clearly different, reproducible activation results.
+-->
+
+## Phase 4 — Team-quality evaluator
+<!-- relay-phase
+cwd: repos/PADBox
+verify:
+  - cwd: repos/PADBox
+    command: "uv run pytest -q"
+    label: "Full test suite"
+  - cwd: repos/PADBox
+    command: "uv run ruff check src tests"
+    label: "Lint"
+-->
+
+### Step 4.1 — `evaluate_team` and hard constraints
+<!-- relay-step
+instruction: |
+  Read brief §7.1. Add `evaluate_team(team, scenario, ruleset) -> EvaluationReport` in `src/padbox/evaluator/`. It reuses the Phase 1 validation for structure, ownership, evolution, leader and helper legality and known transform requirements, and keeps unknown requirements unresolved rather than passing or failing them. The report records the ruleset, scenario, seed and data provenance it ran with.
+-->
+
+### Step 4.2 — Quality dimensions and hierarchical scoring
+<!-- relay-step
+instruction: |
+  Read brief §7.2 and §7.3. Compute activation consistency, survivability, mechanic coverage, damage and flexibility separately from the simulator's metrics, then rank them hierarchically with the objectives from the Decisions. Redundant utility gets diminishing returns. Any scalar score must trace back to its component metrics in the report. Write `docs/scoring-model.md` with the exact formulas and the default `general` scenario.
+-->
+
+### Step 4.3 — Counterfactual explanations and lineup regressions
+<!-- relay-step
+instruction: |
+  Read brief §7.4 and §11 Regression tests. For each card, explain its role and unique contribution and what changes when it is removed, computed by re-evaluating without it. Never claim an alternative was compared unless it was. Add regression tests from the Step 2.1 fixtures, with explicit helpers: the Rozé + Gaia + Apollo + Ordeal Venus + Paladin team against the Ciel/Kushinadahime/Rathios/Pixel Lightning/Leona lineup, insufficient Skill Boosts, overlapping clerics, conflicting assist cooldowns, and incomplete decoding. The test asserts the trade-offs the evaluator reports, not which team wins.
+-->
+
+## Phase 5 — Team optimizer
+<!-- relay-phase
+cwd: repos/PADBox
+verify:
+  - cwd: repos/PADBox
+    command: "uv run pytest -q"
+    label: "Full test suite"
+  - cwd: repos/PADBox
+    command: "uv run ruff check src tests"
+    label: "Lint"
+-->
+
+### Step 5.1 — Candidate generation and recorded pruning
+<!-- relay-step
+instruction: |
+  Read brief §8.1 and §8.2 and issue TB-07. In `src/padbox/optimizer/`, generate candidates from owned copies: owned forms, reachable evolutions, transformable forms, assists, duplicates and helper leaders. Prune only for hard incompatibility, unreachable forms, ownership conflicts, missing essential roles or clear dominance, and record a reason for every pruned candidate. An unrelated undecoded effect is an uncertainty score, never a reason to drop a card. Test that Apollo #7844 survives into the pool for the Rozé leader.
+-->
+
+### Step 5.2 — Staged beam search and helper policy
+<!-- relay-step
+instruction: |
+  Read brief §8.3 and §8.4. Implement the staged search from the Decisions: build complete legal teams with exactly four subs and no copy used twice, score them with a cheap deterministic pass, keep a diverse beam, and simulate only the finalists with `evaluate_team`. Apply the helper policy from the Decisions and mark each helper as owned or explicitly supplied. Write `docs/team-optimizer.md` covering the algorithm, its parameters and what it cannot guarantee.
+-->
+
+### Step 5.3 — Assist optimization for shortlisted teams
+<!-- relay-step
+instruction: |
+  Read brief §8.5. For shortlisted teams, choose assists jointly with the lineup's skill timing: honor copy reservations, assist awakenings, Skill Boosts, cooldown interactions, attribute changes and hazard resistance. Reject assists that overwrite a base active the rotation depends on. Re-evaluate each assisted team with `evaluate_team` before ranking.
+-->
+
+### Step 5.4 — Ranked, explained results
+<!-- relay-step
+instruction: |
+  Read brief §8.6. Return several ranked teams, each with the full lineup, helper, assists, role coverage, transform plan, skill rotation, activation metrics, damage and survival estimates, weaknesses, unknown mechanics, why it was selected, and its trade-offs against the other tested teams. Add an integration test that runs the optimizer on a fixture collection and asserts the top team beats the others under the stated objective and search scope.
+-->
+
+## Phase 6 — Dungeon-specific optimization
+<!-- relay-phase
+cwd: repos/PADBox
+verify:
+  - cwd: repos/PADBox
+    command: "uv run pytest -q"
+    label: "Full test suite"
+  - cwd: repos/PADBox
+    command: "uv run ruff check src tests"
+    label: "Lint"
+-->
+
+### Step 6.1 — Versioned dungeon profiles
+<!-- relay-step
+instruction: |
+  Read brief §9. Add a versioned Pydantic dungeon profile with validation, accepting the brief's example as a test fixture. Each floor lists enemy HP, preemptive damage and mechanics from a fixed vocabulary: damage absorption, attribute absorption, damage void, awoken bind, unmatchable, skill delay, resolve, enemy shields and HP thresholds. Unknown mechanic names are rejected.
+-->
+
+### Step 6.2 — Encounter requirements in evaluation and search
+<!-- relay-step
+instruction: |
+  Make a dungeon profile a scenario for `evaluate_team` and the optimizer: every listed mechanic becomes an essential requirement, checked against modeled responses and timing. A report may say a team handles a floor only when every requirement is modeled and met; anything unmodeled is listed as uncertainty, never as cleared.
+-->
+
+## Phase 7 — CLI, reports and documentation
+<!-- relay-phase
+cwd: repos/PADBox
+verify:
+  - cwd: repos/PADBox
+    command: "uv run pytest -q"
+    label: "Full test suite"
+  - cwd: repos/PADBox
+    command: "uv run ruff check src tests"
+    label: "Lint"
+  - cwd: repos/PADBox
+    command: "uv run padbox team --help"
+    label: "Team command group is installed"
+-->
+
+### Step 7.1 — `padbox team` commands and reports
+<!-- relay-step
+instruction: |
+  Read brief §10. Add the `padbox team` Typer group from the Decisions in `src/padbox/cli.py`, with `evaluate`, `optimize` and `compare`. Each prints the brief's text report sections by default and emits JSON with `--json`, and accepts `--seed`, `--simulations` and `--turns`. Add CLI tests on the fixture collection, and confirm the existing `evaluate` and `check-team` commands behave as before.
+-->
+
+### Step 7.2 — Benchmarks and complete documentation
+<!-- relay-step
+instruction: |
+  Read brief §11 Performance tests and §13. Add `scripts/benchmark_team.py`, which times candidate generation, team construction, evaluation and simulation throughput, search runtime and peak memory on the fixture collection. Record the measured numbers and the targets they justify in `docs/team-optimizer.md`. Bring `docs/team-evaluator.md`, `docs/skill-state-model.md`, `docs/team-optimizer.md`, `docs/scoring-model.md` and `docs/known-mechanics-gaps.md` up to date with what was actually built and verified.
+-->

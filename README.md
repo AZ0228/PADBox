@@ -240,10 +240,40 @@ uv run ruff format --check src tests scripts
 
 Choose an empty home for `demo`. The generated video has repeated views, a one-row overlap and two copies of one icon. See [validation results](docs/validation.md) for actual measured results and limitations. Evaluation manifests support manually labeled **real** crops and unknown-card examples; see [reference/evaluation formats](docs/reference-manifest.md).
 
+## Monster mechanics
+
+`explain` prints the verified effects for one reference monster, plus the transform and assist forms attached to it. Unrecognized skill opcodes stay unknown.
+
+`cover` checks one leader against the applied box. `--helper` is a borrowed card and does not have to be owned. Assists spend a copy. The report lists verified answers and the holes that remain. It does not pick a team.
+
+`pool` lists the owned and reachable forms that might fill those holes, grouped by owned copy. The card in the box stays beside the evolutions and assists that copy can become. `shortlist` keeps the strongest few of those forms in each requirement bucket and lists a few Awoken Assist options under each one. `check-team` reads a JSON file of subs and assists and reports double-spent copies, unreachable forms, open holes, and unknown effects. None of these commands names a best team.
+
+```sh
+uv run padbox explain 13967
+uv run padbox cover 13967
+uv run padbox cover 13967 --helper 13967
+uv run padbox pool 13967
+uv run padbox shortlist 13967
+uv run padbox check-team 13967 team.json
+```
+
+`team.json` names the borrowed helper and the subs. Each sub can name an assist. The leader is the command argument, and one copy of that card is reserved.
+
+```json
+{
+  "helper_id": null,
+  "leader_assist": {"owned_id": 123, "form_id": 456},
+  "helper_assist": null,
+  "subs": [{"owned_id": 10, "form_id": 11, "assist": null}]
+}
+```
+
+These commands use the skill index cached by `sources sync`. Without that cache, compound skills are reported as unresolved component IDs. `cover`, `pool`, `shortlist`, and `check-team` also require an applied box.
+
 ## Design and research
 
 - [Data sources, access checks and licensing limitations](docs/data-sources.md)
-- [Architecture, schema boundaries, highest risks and future optimizer](docs/architecture.md)
+- [Architecture, schema boundaries, highest risks and team handoff](docs/architecture.md)
 - [Milestone handoff and validation](docs/validation.md)
 
 No game art, source dumps, collection databases, recordings, credentials or private player data should be committed. Upstream code licenses do not automatically license game/collaboration artwork. This repository contains original importer code and procedural fixture generators; downloaded references stay local.

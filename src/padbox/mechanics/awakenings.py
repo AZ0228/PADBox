@@ -1,0 +1,235 @@
+"""Awakening IDs for the pinned snapshot.
+
+Names are the English labels that use these IDs. Five of those labels repeat the
+previous attribute; 17, 25, 94, 102, and 119 follow the fire, water, wood, light,
+dark order instead. The vertical-match labels are columns. The snapshot stores
+the ID only. Checklist magnitudes are the effect of that named awakening.
+Tape, cloud, team HP, and team RCV stay counts, because no percent is stored.
+"""
+
+from typing import Any
+
+_NAMES = [
+    "Enhanced HP",
+    "Enhanced Attack",
+    "Enhanced Recovery",
+    "Reduce Fire Damage",
+    "Reduce Water Damage",
+    "Reduce Wood Damage",
+    "Reduce Light Damage",
+    "Reduce Dark Damage",
+    "Auto-Recover",
+    "Resistance-Bind",
+    "Resistance-Blind",
+    "Resistance-Jammers",
+    "Resistance-Poison",
+    "Enhanced Fire Orbs",
+    "Enhanced Water Orbs",
+    "Enhanced Wood Orbs",
+    "Enhanced Light Orbs",
+    "Enhanced Dark Orbs",
+    "Extend Time",
+    "Recover Bind",
+    "Skill Boost",
+    "Enhanced Fire Rows",
+    "Enhanced Water Rows",
+    "Enhanced Wood Rows",
+    "Enhanced Light Rows",
+    "Enhanced Dark Rows",
+    "Two-Pronged Attack",
+    "Resistance-Skill Bind",
+    "Enhanced Heal Orbs",
+    "Multi Boost",
+    "Dragon Killer",
+    "God Killer",
+    "Devil Killer",
+    "Machine Killer",
+    "Balanced Killer",
+    "Attacker Killer",
+    "Physical Killer",
+    "Healer Killer",
+    "Evo Killer",
+    "Awaken Killer",
+    "Enhance Killer",
+    "Redeemable Killer",
+    "Enhanced Combos",
+    "Guard Break",
+    "Bonus Attack",
+    "Enhanced Team HP",
+    "Enhanced Team Recovery",
+    "Damage Void Piercer",
+    "Awoken Assist",
+    "Super Bonus Attack",
+    "Skill Charge",
+    "Resistance-Bind+",
+    "Extend Time+",
+    "Resistance-Clouds",
+    "Resistance-Immobility",
+    "Skill Boost+",
+    "50% or more HP Enhanced",
+    "50% or less HP Enhanced",
+    "[L] Heal Matching",
+    "[L] Increased Attack",
+    "Super Enhanced Combos",
+    "Combo Orbs",
+    "Skill Voice",
+    "Dungeon Bonus",
+    "Reduced HP",
+    "Reduced Attack",
+    "Reduced RCV",
+    "Resistance-Blind+",
+    "Resistance-Jammers+",
+    "Resistance-Poison+",
+    "Blessing of Jammers",
+    "Blessing of Poison Orbs",
+    "Enhanced Fire Combos",
+    "Enhanced Water Combos",
+    "Enhanced Wood Combos",
+    "Enhanced Light Combos",
+    "Enhanced Dark Combos",
+    "Cross Attack",
+    "3 Att. Enhanced Attack",
+    "4 Att. Enhanced Attack",
+    "5 Att. Enhanced Attack",
+    "Super Enhanced Matching",
+    "Add Dragon Type",
+    "Add God Type",
+    "Add Devil Type",
+    "Add Machine Type",
+    "Add Balanced Type",
+    "Add Attacker Type",
+    "Add Physical Type",
+    "Add Healer Type",
+    "Change Sub Attribute: Fire",
+    "Change Sub Attribute: Water",
+    "Change Sub Attribute: Wood",
+    "Change Sub Attribute: Light",
+    "Change Sub Attribute: Dark",
+    "Two-Pronged Attack+",
+    "Skill Charge+",
+    "Auto-Recover+",
+    "Enhanced Fire Orbs+",
+    "Enhanced Water Orbs+",
+    "Enhanced Wood Orbs+",
+    "Enhanced Light Orbs+",
+    "Enhanced Dark Orbs+",
+    "Enhanced Heal Orbs+",
+    "Anti-Skill Boost",
+    "Levitation",
+    "Enhanced Combos+",
+    "[L] Increased Attack+",
+    "Damage Void Piercer+",
+    "Cross Attack+",
+    "Super Enhanced Combos+",
+    "3 Att. Enhanced Attack+",
+    "4 Att. Enhanced Attack+",
+    "5 Att. Enhanced Attack+",
+    "Recover Bind+",
+    "Triple Enhanced Fire Rows",
+    "Triple Enhanced Water Rows",
+    "Triple Enhanced Wood Rows",
+    "Triple Enhanced Light Rows",
+    "Triple Enhanced Dark Rows",
+    "Enhanced Fire Combos+",
+    "Enhanced Water Combos+",
+    "Enhanced Wood Combos+",
+    "Enhanced Light Combos+",
+    "Enhanced Dark Combos+",
+    "[T] Increased Attack",
+    "Enhanced Stats",
+    "Yang Protection",
+    "Yin Protection",
+    "Aging",
+    "Part Break Bonus",
+    "Afternoon Tea",
+    "Fire & Water Attack",
+    "Water & Wood Attack",
+    "Wood & Fire Attack",
+    "Skill Delay Resistance",
+    "All Attr. Enhanced",
+    "Assist Resonance",
+    "Self-Reliance",
+    "Move Time Change Resistance",
+    "Expert Multi-Match",
+    "Enhanced Stats+",
+    "Accelerate",
+    "Extreme Enhanced Combos",
+    "Hopeful Soul",
+    "Brave Soul",
+    "Lucky Soul",
+    "Remove Assist Resistance",
+    "Fire Column",
+    "Water Column",
+    "Wood Column",
+    "Light Column",
+    "Dark Column",
+]
+
+NAMES: dict[int, str] = {index + 1: name for index, name in enumerate(_NAMES)}
+
+# Magnitudes used by the coverage check. Everything else is a name only.
+CHECKLIST: dict[int, dict[str, Any]] = {
+    10: {"bind_resist_percent": 50},
+    11: {"blind_resist_percent": 20},
+    12: {"jammer_resist_percent": 20},
+    13: {"poison_resist_percent": 20},
+    14: {"orb_enhance": "fire"},
+    15: {"orb_enhance": "water"},
+    16: {"orb_enhance": "wood"},
+    17: {"orb_enhance": "light"},
+    18: {"orb_enhance": "dark"},
+    21: {"skill_boost": 1},
+    28: {"skill_bind_resist_percent": 20},
+    29: {"orb_enhance": "heal"},
+    46: {"team_hp": 1},
+    47: {"team_rcv": 1},
+    48: {"void_pierce_awakening": 1},
+    49: {"equip": 1},
+    52: {"bind_resist_percent": 100},
+    54: {"cloud_resist": 1},
+    55: {"tape_resist": 1},
+    56: {"skill_boost": 2},
+    60: {"l_unlock": 1},
+    68: {"blind_resist_percent": 100},
+    69: {"jammer_resist_percent": 100},
+    70: {"poison_resist_percent": 100},
+    99: {"orb_enhance": "fire"},
+    100: {"orb_enhance": "water"},
+    101: {"orb_enhance": "wood"},
+    102: {"orb_enhance": "light"},
+    103: {"orb_enhance": "dark"},
+    104: {"orb_enhance": "heal"},
+    105: {"skill_boost": -1},
+    108: {"l_unlock": 2},
+    109: {"void_pierce_awakening": 2},
+    138: {"assist_resonance": 1},
+    139: {"self_reliance": 1},
+}
+
+
+def describe(awakening_id: int) -> dict[str, Any]:
+    name = NAMES.get(awakening_id)
+    effects = [
+        {"kind": key, "value": value} for key, value in CHECKLIST.get(awakening_id, {}).items()
+    ]
+    if name is None:
+        return {"id": awakening_id, "name": None, "evidence": "unknown", "effects": []}
+    return {"id": awakening_id, "name": name, "evidence": "source_encoded", "effects": effects}
+
+
+def skill_boost(awakening_ids: list[int]) -> int:
+    return sum(
+        int(CHECKLIST.get(awakening_id, {}).get("skill_boost", 0)) for awakening_id in awakening_ids
+    )
+
+
+def total(awakening_ids: list[int], key: str) -> int:
+    return sum(int(CHECKLIST.get(awakening_id, {}).get(key, 0)) for awakening_id in awakening_ids)
+
+
+def capped(awakening_ids: list[int], key: str) -> int:
+    return min(100, total(awakening_ids, key))
+
+
+def has_value(awakening_ids: list[int], key: str, value: object) -> bool:
+    return any(CHECKLIST.get(awakening_id, {}).get(key) == value for awakening_id in awakening_ids)
