@@ -47,6 +47,19 @@ CREATE TABLE review_event(id INTEGER PRIMARY KEY, inventory_id TEXT REFERENCES o
 CREATE INDEX observations_owned ON observation(matched_inventory_id);
 """
 
+SNAPSHOT_SCHEMA = """
+ALTER TABLE owned ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1 CHECK(quantity > 0);
+ALTER TABLE owned ADD COLUMN quantity_verified INTEGER NOT NULL DEFAULT 0;
+CREATE TABLE box_scan(recording_id TEXT PRIMARY KEY REFERENCES recording(id),
+ status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','applied')),
+ created_at TEXT NOT NULL, applied_at TEXT);
+CREATE TABLE box_state(id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL,
+ document TEXT NOT NULL, source_scan TEXT REFERENCES recording(id));
+CREATE TABLE box_history(revision INTEGER PRIMARY KEY, recording_id TEXT REFERENCES recording(id),
+ before_document TEXT NOT NULL, after_document TEXT NOT NULL, diff TEXT NOT NULL,
+ applied_at TEXT NOT NULL);
+"""
+
 
 def now() -> str:
     return datetime.now(UTC).isoformat()
@@ -62,7 +75,10 @@ class Store:
                 if version == 0:
                     db.executescript("BEGIN;" + schema + "PRAGMA user_version=1; COMMIT;")
                     version = 1
-                if version != 1:
+                if name == "inventory" and version == 1:
+                    db.executescript("BEGIN;" + SNAPSHOT_SCHEMA + "PRAGMA user_version=2; COMMIT;")
+                    version = 2
+                if version != (2 if name == "inventory" else 1):
                     raise ValueError(f"Unsupported {name} schema version {version}")
 
     def connect(self, name: str = "inventory") -> sqlite3.Connection:

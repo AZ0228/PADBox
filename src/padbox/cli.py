@@ -10,6 +10,7 @@ import typer
 
 from padbox.database.store import Store
 from padbox.detection.grid import annotate, detect
+from padbox.inventory.snapshots import apply_scan, history, preview_scan, scan_list
 from padbox.models import Layout
 from padbox.recognition.evaluate import evaluate
 from padbox.recognition.matcher import Matcher
@@ -19,6 +20,8 @@ from padbox.video.reader import frames, metadata
 app = typer.Typer(no_args_is_help=True, help="PADBox — local PAD collection indexing and review")
 sources = typer.Typer(no_args_is_help=True, help="Load local or pinned public reference snapshots")
 app.add_typer(sources, name="sources")
+scans = typer.Typer(no_args_is_help=True, help="Full-box drafts, diffs and replacement history")
+app.add_typer(scans, name="scans")
 
 
 @app.callback()
@@ -94,6 +97,47 @@ def inspect(
     if not cv2.imwrite(str(output), annotate(frame.image, cells)):
         raise typer.BadParameter("Failed writing inspection image")
     emit({"metadata": metadata(recording), "cells": len(cells), "preview": output.resolve()})
+
+
+@scans.command("list")
+def list_scans(ctx: typer.Context) -> None:
+    emit(scan_list(ctx.obj))
+
+
+@scans.command("diff")
+def diff_scan(ctx: typer.Context, scan_id: str, output: Path | None = None) -> None:
+    """Preview additions/removals against the currently applied box."""
+    try:
+        preview = preview_scan(ctx.obj, scan_id)
+        if output:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(json.dumps(preview, indent=2) + "\n")
+        emit(preview)
+    except (ValueError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@scans.command("apply")
+def apply_snapshot(
+    ctx: typer.Context,
+    scan_id: str,
+    preview: Annotated[Path, typer.Option(help="Reviewed JSON from scans diff --output")],
+    full_box: Annotated[bool, typer.Option(help="I verified the complete unfiltered box")] = False,
+    expected_slots: Annotated[int | None, typer.Option(min=1)] = None,
+) -> None:
+    """Replace the entire current box with the exact reviewed draft."""
+    try:
+        document = json.loads(preview.read_text())
+        if document["scan_id"] != scan_id:
+            raise ValueError("Preview belongs to a different scan")
+        emit(apply_scan(ctx.obj, scan_id, document["preview_token"], full_box, expected_slots))
+    except (ValueError, OSError, KeyError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@scans.command("history")
+def scan_history(ctx: typer.Context) -> None:
+    emit(history(ctx.obj))
 
 
 @app.command("evaluate")
