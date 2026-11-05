@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -145,6 +146,71 @@ def review(ctx: typer.Context, port: int = 8501) -> None:
         check=False,
     )
     raise typer.Exit(result.returncode)
+
+
+@app.command()
+def live(
+    ctx: typer.Context,
+    port: Annotated[int, typer.Option(min=1, max=65535)] = 8502,
+    layout: Annotated[Path | None, typer.Option(help="Default live phone layout JSON")] = None,
+    background: Annotated[
+        bool, typer.Option(help="Keep the local server running after this command")
+    ] = False,
+    stop: Annotated[
+        bool, typer.Option(help="Stop this collection's live server on the chosen port")
+    ] = False,
+) -> None:
+    """Launch local live window capture and immediate review in your browser."""
+    from padbox.live.lifecycle import start_background, stop_background
+    from padbox.live.server import LiveServer
+
+    if stop and background:
+        raise typer.BadParameter("Choose either --background or --stop")
+    home = ctx.obj.home
+    try:
+        if stop:
+            stopped = stop_background(home, port)
+            typer.echo(
+                "Live server stopped; collection saved."
+                if stopped
+                else "Live server is not running."
+            )
+            return
+        saved_layout = home / "live-layout.json"
+        layout_path = layout or (saved_layout if saved_layout.exists() else None)
+        settings = Layout.model_validate_json(layout_path.read_text()) if layout_path else Layout()
+        if background:
+            ready = start_background(home, port, layout_path)
+            typer.echo(f"PADBox live scan: http://127.0.0.1:{port}")
+            typer.echo(
+                f"Background server ready (PID {ready['pid']}). "
+                "It stays running after this command."
+            )
+            typer.echo(f"Log: {home / f'live-server-{port}.log'}")
+            return
+        server = LiveServer(ctx.obj, port, settings)
+        saved_layout.write_text(settings.model_dump_json(indent=2))
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(f"Cannot start/manage live server on port {port}: {exc}") from exc
+    typer.echo(f"PADBox live scan: {server.origin}")
+    typer.echo("Keep this terminal open. Press Ctrl+C to stop; saved entries are retained.")
+    typer.echo("Open this URL in Chrome/Edge. Select your QuickTime iPhone preview window.")
+    pidfile = home / f"live-server-{port}.pid"
+    pidfile.write_text(str(os.getpid()))
+
+    def terminate(_signal: int, _frame: object) -> None:
+        raise KeyboardInterrupt
+
+    previous_handler = signal.signal(signal.SIGTERM, terminate)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        typer.echo("Live sessions saved and paused.")
+    finally:
+        server.server_close()
+        signal.signal(signal.SIGTERM, previous_handler)
+        if pidfile.exists() and pidfile.read_text() == str(os.getpid()):
+            pidfile.unlink()
 
 
 @app.command("export")

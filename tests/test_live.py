@@ -1,4 +1,5 @@
 import json
+import threading
 import urllib.error
 import urllib.request
 from contextlib import closing
@@ -9,6 +10,7 @@ import pytest
 
 from padbox.export.collection import collection
 from padbox.inventory.service import entries
+from padbox.live.server import LiveServer
 from padbox.live.session import LiveSessions, decode_frame
 from padbox.models import Layout
 
@@ -167,6 +169,17 @@ def test_input_validation_and_saved_capture_crop(live, fixtures):
     assert session["config"]["capture_crop"] == [0.1, 0.05, 0.9, 0.95]
 
 
+@pytest.fixture
+def live_server(store):
+    server = LiveServer(store, 0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield server
+    server.shutdown()
+    server.server_close()
+    thread.join(timeout=5)
+
+
 def request(server, path, body=None, token=True, origin=None, host=None):
     headers = {"X-PADBox-Token": server.token} if token else {}
     if origin:
@@ -183,6 +196,86 @@ def request(server, path, body=None, token=True, origin=None, host=None):
             return response.status, response.read(), response.headers
     except urllib.error.HTTPError as exc:
         return exc.code, exc.read(), exc.headers
+
+
+def test_http_batch_preview_acceptance_validation_and_auth(live_server, reviewable_draft):
+    server = live_server
+    sid = reviewable_draft
+    policy = {"min_score": 0.50, "min_margin": 0}
+    endpoint = f"/api/scans/{sid}/batch-preview"
+    assert request(server, endpoint, policy, token=False)[0] == 403
+    assert request(server, endpoint, policy, origin="https://example.com")[0] == 403
+    assert request(server, endpoint, {"min_score": 1.1})[0] == 400
+    assert request(server, endpoint, {**policy, "include_ambiguous": True})[0] == 400
+    status, body, _ = request(server, endpoint, policy)
+    assert status == 200, body
+    preview = json.loads(body)
+    assert preview["eligible_count"] > 0
+    assert (
+        request(server, f"/api/scans/{sid}/batch-accept", {**policy, "preview_token": "0" * 64})[0]
+        == 400
+    )
+    status, body, _ = request(
+        server,
+        f"/api/scans/{sid}/batch-accept",
+        {**policy, "preview_token": preview["preview_token"]},
+    )
+    assert status == 200, body
+    assert json.loads(body)["accepted_count"] == preview["eligible_count"]
+    assert collection(server.sessions.store)["monsters"] == []
+    assert (
+        request(
+            server,
+            f"/api/scans/{sid}/batch-accept",
+            {**policy, "preview_token": preview["preview_token"]},
+        )[0]
+        == 400
+    )
+
+
+def test_http_assume_stack_quantities_auth_and_draft_scope(live_server):
+    from padbox.inventory.service import add, entries
+
+    server = live_server
+    store = server.sessions.store
+    with closing(store.connect("reference")) as db, db:
+        db.execute("UPDATE monster SET raw=? WHERE id=900001", (json.dumps({"stackable": True}),))
+    sid = server.sessions.create(Layout())["id"]
+    item = add(store, 900001, 1, sid)[0]
+    endpoint = f"/api/scans/{sid}/stack-quantity-one"
+    assert request(server, endpoint, {}, token=False)[0] == 403
+    assert request(server, endpoint, {}, origin="https://example.com")[0] == 403
+    assert request(server, endpoint, {"quantity": 10})[0] == 400
+    assert not entries(store, sid)[0]["quantity_verified"]
+    status, body, _ = request(server, endpoint, {})
+    assert status == 200 and json.loads(body)["updated_count"] == 1
+    row = next(r for r in entries(store, sid) if r["id"] == item)
+    assert row["quantity"] == 1 and row["quantity_verified"]
+    assert collection(store)["monsters"] == []
+    assert json.loads(request(server, endpoint, {})[1])["updated_count"] == 0
+    with closing(store.connect()) as db, db:
+        db.execute("UPDATE box_scan SET status='applied' WHERE recording_id=?", (sid,))
+    assert request(server, endpoint, {})[0] == 400
+
+
+def test_http_rejects_untrusted_requests_and_malformed_frames(live_server):
+    server = live_server
+    assert request(server, "/api/bootstrap", token=False)[0] == 403
+    assert request(server, "/api/sessions", {"layout": {}}, origin="https://example.com")[0] == 403
+    assert request(server, "/", host="evil.example")[0] == 403
+    status, body, _ = request(server, "/api/sessions", {"layout": {}})
+    sid = json.loads(body)["id"]
+    assert (
+        request(
+            server, f"/api/sessions/{sid}/frame", {"sequence": 0, "timestamp": 0, "jpeg": "%%%bad"}
+        )[0]
+        == 400
+    )
+    assert request(server, "/api/icons/../../etc/passwd")[0] == 400
+    assert request(server, "/api/sessions", {"layout": {"roi": [0, 0, 0, 1]}})[0] == 400
+    assert request(server, "/api/sessions", {"layout": {}, "capture_crop": [0, 0, 0, 0]})[0] == 400
+    # Private file paths are never a supported HTTP resource.
+    assert request(server, "/.padbox/inventory.sqlite")[0] == 404
 
 
 def test_live_review_entry_scope_and_indirect_copy_safeguards(live, fixtures, store):
