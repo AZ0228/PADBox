@@ -11,6 +11,7 @@ import typer
 from padbox.database.store import Store
 from padbox.detection.grid import annotate, detect
 from padbox.export.collection import collection, csv_export
+from padbox.inventory.pipeline import import_media, rematch
 from padbox.inventory.service import accept, add, set_entry_quantity, set_quantity, statistics
 from padbox.inventory.snapshots import apply_scan, history, preview_scan, scan_list
 from padbox.models import Layout
@@ -83,6 +84,21 @@ def sync_source(
                 "note": "Only cached icons can be matched. See docs/data-sources.md.",
             }
         )
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@app.command("import")
+def import_command(
+    ctx: typer.Context,
+    recording: Path,
+    layout: Annotated[Path | None, typer.Option(help="Normalized layout JSON")] = None,
+    interval: Annotated[float, typer.Option(min=0.01, help="Sample interval in seconds")] = 0.3,
+) -> None:
+    """Capture a replacement draft; strong matches are accepted within the draft."""
+    try:
+        settings = Layout.model_validate_json(layout.read_text()) if layout else Layout()
+        emit(import_media(ctx.obj, recording, settings, interval))
     except (OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
 
@@ -162,6 +178,11 @@ def accept_command(
         emit(statistics(ctx.obj))
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
+
+
+@app.command("rematch")
+def rematch_command(ctx: typer.Context) -> None:
+    emit({"updated_unreviewed_entries": rematch(ctx.obj)})
 
 
 @app.command("entry-quantity")
