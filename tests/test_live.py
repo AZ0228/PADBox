@@ -1,3 +1,4 @@
+import base64
 import json
 import threading
 import urllib.error
@@ -196,6 +197,41 @@ def request(server, path, body=None, token=True, origin=None, host=None):
             return response.status, response.read(), response.headers
     except urllib.error.HTTPError as exc:
         return exc.code, exc.read(), exc.headers
+
+
+def test_http_session_capture_correction_and_export(live_server, fixtures):
+    server = live_server
+    status, body, _ = request(server, "/")
+    assert status == 200 and server.token.encode() in body
+    assert request(server, "/app.js")[0] == 200
+    status, body, _ = request(server, "/api/sessions", {"layout": {}})
+    assert status == 201
+    session = json.loads(body)
+    sid = session["id"]
+    assert request(server, f"/api/sessions/{sid}/control", {"action": "resume"})[0] == 200
+    status, body, _ = request(
+        server,
+        f"/api/sessions/{sid}/frame",
+        {"sequence": 0, "timestamp": 0, "jpeg": base64.b64encode(jpeg(fixtures["image"])).decode()},
+    )
+    assert status == 200, body
+    result = json.loads(body)
+    assert result["active_entries"] == 15
+    owned_id = result["entries"][0]["id"]
+    assert request(server, result["entries"][0]["crop_url"])[0] == 200
+    assert request(server, "/api/icons/900001")[0] == 200
+    assert (
+        request(
+            server,
+            f"/api/sessions/{sid}/review",
+            {"inventory_id": owned_id, "action": "accept", "monster_id": 900001},
+        )[0]
+        == 200
+    )
+    assert json.loads(request(server, "/api/export/json")[1])["monsters"] == []
+    assert request(server, "/api/export/csv")[0] == 200
+    assert request(server, "/api/search?q=900001")[0] == 200
+    assert request(server, "/api/inventory?q=900001")[0] == 200
 
 
 def test_http_batch_preview_acceptance_validation_and_auth(live_server, reviewable_draft):
