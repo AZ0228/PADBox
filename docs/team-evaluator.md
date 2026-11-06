@@ -2,9 +2,30 @@
 
 Layer B is `padbox.evaluator`. The turn simulator lives in `padbox.evaluator.sim`. This layer scores one supplied team under a stated scenario. It does not search for another team.
 
-`padbox.mechanics` still owns legality: ownership, evolution, team shape, transforms, and decoder coverage. `check_team` reports `strategic_quality: not_evaluated` until the evaluator writes a score. A passing `ok` is a complete-team checklist, not a battle result.
+`padbox.mechanics` still owns legality: ownership, evolution, team shape, transforms, and decoder coverage. `check_team` reports `strategic_quality: not_evaluated`. `evaluate_team` reuses that check, runs the scenario's simulation, and scores the team with `docs/scoring-model.md`. A passing `ok` is a complete-team checklist, not a battle result.
 
-The board is 6×5. Any other size is unsupported and is reported as such.
+The board is 6×5: 6 columns by 5 rows. Any other size is unsupported and is reported as such.
+
+## Hard-constraint report
+
+`evaluate_team(team, scenario, ruleset)` returns an `EvaluationReport` for one supplied team. The team names `leader_id` and the subs, helper, and assists `check_team` already accepts. The applied box and the reference snapshot come from the store passed with the call. This function does not search. After the hard checks, a 6×5 board is simulated for the scenario's turn count, simulation count, and seed. The quality components use the formulas in `docs/scoring-model.md`, read from that simulation and from the utility-slot count. `strategic_quality` is `excluded`, `unresolved`, or `ranked`. The scalar exists only when the team is ranked.
+
+The report stores the ruleset, the scenario, the seed, and the data provenance of that run. The scenario records its name, seed, turn count, and simulation count. The defaults are `general`, seed 0, 10 turns, and 1,000 simulations. The ruleset records the greedy matching policy and `policy_approximation`. A board other than 6×5 fails the board check, and the requested size stays on the ruleset.
+
+Provenance is the reference source and version on the leader's monster row, the applied box revision, whether the skill index was supplied, cached, or missing, and the decoder version.
+
+Hard checks reuse `check_team` and stay `pass`, `fail`, or `unknown`:
+
+- Team structure, and whether the team is complete: one leader, four subs, and one helper. A missing helper does not add a fifth sub. A partial team is still checked, with `team_complete` false.
+- Ownership and copy limits.
+- Evolution feasibility. A special requirement the reference cannot interpret stays `unknown`.
+- Leader legality passes when an owned copy can become the leader.
+- Helper legality passes when a helper was supplied explicitly. A borrowed helper is legal. A missing helper fails, because a friend's helper is not assumed.
+- Transform requirements, including each transforming member. An unresolved cooldown stays `unknown`. A known miss on another member stays `fail`.
+- Mechanics coverage and each decoder requirement, each with its own result.
+- Each requirement the scenario names. A name the decoder already judged keeps that result. A name this layer does not model stays `unknown`.
+
+`feasibility` is `pass` only when every hard check passes. Any `fail` makes it `fail`, including an incomplete team. `unknown` with no `fail` makes it `unknown`. An unresolved check is not a pass and is not a zero.
 
 Simulation defaults, recorded on every report and overridable by flag:
 
@@ -84,6 +105,18 @@ Each metric carries `successes`, `trials`, `unresolved`, and `failures`. A failu
 - `orb_generation_uptime` is the share of turns that applied a verified board change or skyfall, or still had one active for a known duration. The ordinary refill is not a generator. A turn without one is `no_generator`.
 - `active_effect_uptime` is the share of turns that ended with a known-duration effect still up. A team with none is a real zero (`no_active_effect`).
 - `mechanic_response_availability` is present only when the scenario names mechanics. A named mechanic is available when that verified effect was applied this turn or is still active for a known duration. Otherwise the turn records `unavailable:{kind}`.
+
+## Card explanations
+
+`evaluate_team` explains every fielded card. The role is that card's verified leader clauses and verified active effects. An effect the decoder did not verify is named and stays unresolved. The unique contribution is a verified effect kind no other fielded active also has, plus the leader slot's clauses, which are what activation consistency measures.
+
+Removing a sub, assist, or helper runs `evaluate_team` again without that card, with the same scenario, ruleset, seed, turn count, and simulation count. Removing the leader runs the battle without that card. No other leader is evaluated, and the reduced skill-boost total is left unset rather than attributed to a substitute. The removal lists each component before and after, the kinds the team loses or gains, and the skill-boost total and requirement when both evaluations checked a team.
+
+`alternatives_considered` is empty and `ranks_higher_because` is null. A ranking reason is rejected unless an alternative card was actually evaluated. This function does not evaluate a replacement.
+
+An assist replaces the host active. The explanation records the host minimum cooldown and the assist minimum cooldown. Charge fills the host cooldown before the assist counter. When the assist cooldown is longer, the host active stays unavailable while the assist is equipped. Removing the assist returns the host active in the re-evaluation.
+
+`compare_teams` evaluates two supplied teams under one scenario and lists the measured differences, including skill boost, transform, the five components, and which cards still have unresolved effects. `selected_team` stays null. Comparing two teams does not mark any card as having been compared with an alternative.
 
 ## What a report may claim
 
