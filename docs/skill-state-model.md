@@ -89,7 +89,7 @@ The inherited counter is that assist skill's own minimum under the same max-skil
 
 ## Still unresolved
 
-- Haste, skill delay, skill boosts, and assist overcharge are not applied to this counter.
+- `tick` subtracts one charge. It does not apply haste, skill delay, skill boosts, or assist overcharge. `padbox.evaluator.sim` applies those around the counter.
 - The post-transform and post-stage counter is the labeled `state_minimum` rule.
 - Gaia's sequence has no loop-or-end flag in the snapshot decode.
 - Leader skills are outside this machine.
