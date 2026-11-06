@@ -2,34 +2,36 @@
 
 Audit: 2026-11-05, current working tree at HEAD `dcd1b5e45f5278062438f243356bf1b228451ae3`, including pre-existing untracked mechanics code. No production or test changes were made. Source hashes and executable results are in [team-builder-trace.json](team-builder-trace.json); architecture and detailed context are in [team-builder-audit.md](team-builder-audit.md); all ranking formulas are in [team-builder-scoring.md](team-builder-scoring.md).
 
-Severity measures the risk of misinterpreting output as a playable, strong PAD team. **High** can invalidate a core team claim; **medium** can materially bias candidates or feasibility; **low** affects reporting or narrower cases. “Confirmed bug” is used for a demonstrated implementation inconsistency, including incompatibility with the standard team structure stipulated by the audit. “Missing feature” is not an assertion that the current project promised to implement it. Recommendations below identify missing regression evidence only; no fixes are implemented.
+Severity measures the risk of misinterpreting output as a playable, strong PAD team. **High** can invalidate a core team claim; **medium** can materially bias candidates or feasibility; **low** affects reporting or narrower cases. “Confirmed bug” is used for a demonstrated implementation inconsistency, including incompatibility with the standard team structure stipulated by the audit. “Missing feature” is not an assertion that the current project promised to implement it. The findings below are the audit record. Each issue's **Status** says whether later validation work fixed it, left it open, or fixed part of it.
 
 ## Summary
 
-| ID | Priority / classification | Finding |
-| --- | --- | --- |
-| TB-01 | High — confirmed bug | Five subs with no helper, and incomplete teams, can report `ok:true` |
-| TB-02 | High — confirmed bug | Unresolved leader/helper transformation cost becomes a passing null SB requirement |
-| TB-03 | High — missing feature | Chosen sub transformation costs/readiness are not checked |
-| TB-04 | High — modeling approximation | One-time entry, combat and inherited actives count as simultaneously available coverage |
-| TB-05 | High — missing feature | No actual cross-generator rotation, board, damage, healing or survival model |
-| TB-06 | High — missing feature / scope boundary | No optimizer, winning-team function or quality objective exists |
-| TB-07 | Medium — modeling approximation | Unknown sibling effects lexicographically dominate useful cooldown improvements |
-| TB-08 | Medium — confirmed inconsistency | Reserved leader source's mutually exclusive forms consume shortlist positions without spare copies |
-| TB-09 | Medium — confirmed bug | Ordinary-link board bucket key does not match assist answer key |
-| TB-10 | Medium — modeling approximation | Main-attribute and awakening presence is treated as a legality/damage rule |
-| TB-11 | Medium — modeling approximation | Color provider does not prove sufficient orb count or a valid match |
-| TB-12 | Medium — modeling approximation | Reachability uses incomplete material rules and one locally cheapest path |
-| TB-13 | Medium — confirmed inconsistency | Named-team ordinary-link check omits the uptime condition used by coverage |
-| TB-14 | Medium — modeling approximation | Coverage ceilings/loops are independent optimistic constructions, not jointly feasible teams |
-| TB-15 | Medium — modeling approximation | Max-skilled, fully awakened normal loadout is assumed; actual per-copy state absent |
-| TB-16 | Medium — data-quality concern | Mechanics cache lookup lacks fetch-path hash revalidation and uses one leader-version index |
-| TB-17 | Medium — data-quality concern / evidence gap | Previous 29-SB result and historical selection cannot be reproduced from supplied details |
-| TB-18 | Low — confirmed reporting bug | `candidate_copies`/`omitted_copies` count monster-ID groups, not copies |
-| TB-19 | Low — confirmed reporting omission | Leader evolution investment is absent from named-team `investments` |
-| TB-20 | Medium — data-quality concern | Raw ID/name mismatch in requested Gaia comparison; evolving skill type232 unsupported |
+| ID | Status | Priority / classification | Finding |
+| --- | --- | --- | --- |
+| TB-01 | Fixed | High — confirmed bug | Five subs with no helper, and incomplete teams, can report `ok:true` |
+| TB-02 | Fixed | High — confirmed bug | Unresolved leader/helper transformation cost becomes a passing null SB requirement |
+| TB-03 | Fixed | High — missing feature | Chosen sub transformation costs/readiness are not checked |
+| TB-04 | Fixed | High — modeling approximation | One-time entry, combat and inherited actives count as simultaneously available coverage |
+| TB-05 | Open | High — missing feature | No actual cross-generator rotation, board, damage, healing or survival model |
+| TB-06 | Open | High — missing feature / scope boundary | No optimizer, winning-team function or quality objective exists |
+| TB-07 | Open | Medium — modeling approximation | Unknown sibling effects lexicographically dominate useful cooldown improvements |
+| TB-08 | Fixed | Medium — confirmed inconsistency | Reserved leader source's mutually exclusive forms consume shortlist positions without spare copies |
+| TB-09 | Open | Medium — confirmed bug | Ordinary-link board bucket key does not match assist answer key |
+| TB-10 | Open | Medium — modeling approximation | Main-attribute and awakening presence is treated as a legality/damage rule |
+| TB-11 | Open | Medium — modeling approximation | Color provider does not prove sufficient orb count or a valid match |
+| TB-12 | Partial | Medium — modeling approximation | Reachability uses incomplete material rules and one locally cheapest path |
+| TB-13 | Fixed | Medium — confirmed inconsistency | Named-team ordinary-link check omits the uptime condition used by coverage |
+| TB-14 | Open | Medium — modeling approximation | Coverage ceilings/loops are independent optimistic constructions, not jointly feasible teams |
+| TB-15 | Partial | Medium — modeling approximation | Max-skilled, fully awakened normal loadout is assumed; actual per-copy state absent |
+| TB-16 | Open | Medium — data-quality concern | Mechanics cache lookup lacks fetch-path hash revalidation and uses one leader-version index |
+| TB-17 | Open | Medium — data-quality concern / evidence gap | Previous 29-SB result and historical selection cannot be reproduced from supplied details |
+| TB-18 | Fixed | Low — confirmed reporting bug | `candidate_copies`/`omitted_copies` count monster-ID groups, not copies |
+| TB-19 | Fixed | Low — confirmed reporting omission | Leader evolution investment is absent from named-team `investments` |
+| TB-20 | Open | Medium — data-quality concern | Raw ID/name mismatch in requested Gaia comparison; evolving skill type232 unsupported |
 
 ## TB-01 — Standard team shape is not enforced
+
+**Status:** Fixed. A leader plus five subs and no helper fails team shape. A leader plus one sub stays partial (`team_complete: false`, `ok: false`). A leader, four subs, and a helper can pass the hard checks. Tests: `test_five_subs_without_a_helper_are_not_a_standard_team`, `test_check_accepts_a_team_that_closes_the_holes`, `test_four_subs_without_a_helper_stay_partial`, `test_a_leader_four_subs_and_a_helper_can_pass_the_hard_checks`.
 
 **Evidence:** `src/padbox/mechanics/team.py:293–310,372–374` uses `4 if helper else 5`. It checks only `len(subs) > sub_slots`, not exact occupancy or helper presence. `ok` at lines409–415 has no other team-shape condition. The same slot convention appears in `src/padbox/mechanics/coverage.py:235–249`.
 
@@ -41,6 +43,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 ## TB-02 — Unresolved transformation fails open
 
+**Status:** Fixed. A missing transform active is `unknown`. An unresolved helper keeps a known leader cooldown. A missing skill-index component stays `unknown`. Tests: `test_unresolved_transform_is_unknown_not_a_zero_turn_pass`, `test_unresolved_helper_keeps_the_leader_transform_cost`, `test_missing_component_index_does_not_pass_a_transform`.
+
 **Evidence:** `src/padbox/mechanics/coverage.py:693–705` yields `required_turns=None` unless a decoded transform target matches. Lines667–669 set the combined requirement to null when any leader/helper transform is unresolved. `src/padbox/mechanics/team.py:591–595` adds a shortfall only when required is non-null; lines645–647 make `meets` true when it is null. `_check` does not propagate `cover.holes` into failure.
 
 **Observed example:** Synthetic leader with a transform relationship but no transform active passed `check_team` with zero SB, `required:null`, `meets:true`, `ok:true`. `cover` has an explicit warning for that unresolved transformation at `coverage.py:1281–1287`.
@@ -50,6 +54,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 **Missing regression evidence:** Missing/unknown transform active, unresolved helper with known leader, absent component index, and visibly different unknown-vs-no-transform states.
 
 ## TB-03 — Sub transformation requirements are omitted
+
+**Status:** Fixed. A selected sub transform can require more Skill Boost than the leader. Tests: `test_selected_sub_transform_can_cost_more_than_the_leader`, `test_transformed_sub_under_a_non_transform_leader_is_not_free`.
 
 **Evidence:** Transform requirement construction at `src/padbox/mechanics/coverage.py:653–669` includes only leader and helper. Selected sub battle/entry actives are included by `src/padbox/mechanics/team.py:512–519`; `_boost_report` at629–649 counts sub entry SB but never their transform cooldowns.
 
@@ -61,6 +67,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 ## TB-04 — Coverage treats incompatible skill states as a bag of effects
 
+**Status:** Fixed for active state. Entry, transformed, and inherited actives are alternatives. Duration and cooldown schedules remain with TB-05. Tests: `test_entry_active_does_not_cover_roles_after_transform`, `test_inherited_active_replaces_the_base_active`.
+
 **Evidence:** `src/padbox/mechanics/team.py:495–520` includes leader/helper entry and combat actives, each selected sub/equip active and the sub's entry active. Roles use an existence test at599–626. There is no shared cooldown, state transition, inherited skill override or schedule.
 
 **Observed example:** Rozé's base #13966 supplies full bind clear; combat #13967 does not. Removing Ciel still does not open the bind-clear hole because the entry active continues to count. Assist actives are counted in addition to their hosts, without a base-plus-assist cooldown calculation.
@@ -70,6 +78,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 **Missing regression evidence:** Entry skill used once, inherited active overcharge/reset, essential base active availability, competing uses of a single active slot, duration/cooldown schedules.
 
 ## TB-05 — Core battle performance is not evaluated
+
+**Status:** Open. `strategic_quality` stays `not_evaluated`. A cross marked available still has `loop: null`, and the check output has no battle score. Test: `test_battle_quality_stays_unevaluated`.
 
 **Evidence:** Cross requirements explicitly skip `_loop` at `src/padbox/mechanics/coverage.py:808–830`; `_produce_summary` at961–998 is categorical. `src/padbox/mechanics/team.py:963–969` substitutes a main-attribute/nonempty-awakening gate for damage. Role and assist selection at224–248,544–626,834–872 contains no HP/RCV/damage/board state.
 
@@ -81,6 +91,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 ## TB-06 — “Optimal team” is not a current output
 
+**Status:** Open. Pool, shortlist, and check-team still do not score or search, and the CLI has no optimizer command. Test: `test_mechanics_does_not_name_an_optimal_team`.
+
 **Evidence:** `src/padbox/mechanics/team.py:1–5,29–125` implements enumeration, independent shortlists and checking. `src/padbox/cli.py:335–428` exposes `explain`, `cover`, `pool`, `shortlist`, `check-team`. There is no `score_team`, search result or helper selection. Local `AGENTS.md:3` explicitly prohibits adding a best-team search; README calls the optimizer deferred.
 
 **Observed example:** Every requested scalar score and controlled score delta is null in the trace, with an explicit absence reason. The historical team is stored as a user-supplied claim, not an engine selection event.
@@ -90,6 +102,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 **Classification note:** An intentional scope boundary. The high severity applies to downstream interpretation, not to violation of the current repository scope.
 
 ## TB-07 — Unknown-effect preference can bury useful short cooldowns
+
+**Status:** Open. Shortlist order still places an unknown effect ahead of cooldown.
 
 **Evidence:** The complete prefix `(not leader_copies, has_unknown, requires_evolution, len(spends))` precedes cooldown in `src/padbox/mechanics/team.py:801–813`. No effect-specific relevance or uncertainty magnitude is used.
 
@@ -101,6 +115,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 ## TB-08 — Pinned alternate forms lack a spare-copy check
 
+**Status:** Fixed. A shortlist pins the fielded leader form. Other forms of that copy appear only when a spare copy remains. Test: `test_pinned_alternate_forms_need_a_spare_copy`.
+
 **Evidence:** `src/padbox/mechanics/team.py:169–173` sets `leader_copies` at group level. `_bucket_order` at805 pins that whole group; `_take` at794–798 retains all its forms before truncating other candidates. No available-unreserved-copy predicate filters sub rows.
 
 **Observed example:** Only one #13966 is owned and reserved. Nevertheless #13966, #13967 and equip #13968 occupy the first three awoken/unmatchable bucket positions. The equip also occupies the first absorb slot even though that sole source cannot become both leader and equip. The final validator would reject double spending; the list still spends its display capacity on those alternatives.
@@ -110,6 +126,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 **Missing regression evidence:** Sole reserved copy, spare second copy, multiple alternative leader/equip forms, independent-copy count versus displayed row count.
 
 ## TB-09 — Full-board assist answer-key mismatch
+
+**Status:** Open. The ordinary-link board bucket key still does not match the assist answer key.
 
 **Evidence:** `src/padbox/mechanics/team.py:238–241` creates `light_board`; `_bucket_specs` at779–785 names the ordinary-link bucket `full_light_board`; `_assists` at841–845 requires an answer to be a member of the bucket-key set. These strings cannot match.
 
@@ -121,6 +139,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 ## TB-10 — Damage heuristic is enforced as a hard problem
 
+**Status:** Open. Main attribute and a non-empty awakening list are still a hard problem.
+
 **Evidence:** `src/padbox/mechanics/team.py:446–469,949–969` unions linked attributes, requires a known main attribute within the union, and rejects matching-main cards with empty awakenings. Missing/untyped raw attributes pass. Types, subattributes, awakening damage magnitudes, actual ATK and assist attribute changes are unused.
 
 **Affected example:** A support whose useful damage comes from a matching subattribute can be rejected; a card with any non-damaging awakening list can pass. Helper checking uses the entry card even when a transformed combat form is supplied. These are code consequences, not a quantified game-damage comparison.
@@ -130,6 +150,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 **Missing regression evidence:** Subattribute contribution, utility-only support, unknown attribute data, transformed helper attribute changes, exact leader type restrictions.
 
 ## TB-11 — Categorical orb provider overstates activation evidence
+
+**Status:** Open. A color provider is still recognized by destination color, without an orb count or a board.
 
 **Evidence:** `src/padbox/mechanics/coverage.py:961–998` checks destination color membership. It does not compare created orb count with `minimum_linked`, verify conversion source availability, or build a board. Cross shape is inferred globally from any cross trigger at879–887. `src/padbox/mechanics/team.py:559–589` accepts one clean provider.
 
@@ -141,6 +163,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 ## TB-12 — Reachability and evolution costs are incomplete
 
+**Status:** Partial. Equal-cost routes, cumulative material demand, uninterpreted special requirements, and stackable assumptions are reported separately from exact spends. Depth stops at 8, and one transform step is appended. Reverse evolution is still not enumerated. Tests: `test_equal_cost_routes_and_cumulative_materials`, `test_special_evolution_requirements_stay_unknown`, `test_evolution_depth_and_one_transform_step`, `test_stackable_material_is_free_and_a_specific_monster_is_spent`.
+
 **Evidence:** `src/padbox/mechanics/coverage.py:419–485` only follows forward evolution/assist edges, caps depth8, appends one transform step, ignores stackable material ownership, rejects missing material references, and stores only a fewer-spend-copy path. Equal-count alternative materials and cumulative affordability are not resolved jointly. `_reserve` checks one retained route; final selected demand checks copies at `src/padbox/mechanics/team.py:472–492`.
 
 **Affected examples:** A missing ID65535 in an ordeal recipe cannot be interpreted by generic `_material_cost`. Non-stackable costs repeated across multiple evolution steps may be listed before aggregate demand proves them impossible. An equal-copy-cost route spending an unavailable-after-reservation material can hide another route. Reverse-evolution access and chained transformations are not enumerated.
@@ -150,6 +174,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 **Verification boundary:** Material policy is explicit and tested; alternative-route and special-recipe examples are code-based risks, not claimed failed historical selections. Missing regression: equal-length different-material paths, cumulative spending, special recipes, and depth/transform boundaries.
 
 ## TB-13 — Ordinary-link uptime is dropped by named-team validation
+
+**Status:** Fixed. One 5-turn full board leaves the ordinary-link hole open. Test: `test_one_slow_full_board_does_not_keep_an_ordinary_link_up`.
 
 **Evidence:** `src/padbox/mechanics/coverage.py:813–830,1001–1084` uses reciprocal-cooldown uptime for ordinary-link `status`. `src/padbox/mechanics/team.py:559–589,613–626` instead checks whether one selected clean active makes a mono-board, regardless of its cooldown. Its hole text still says “keeps a full board ... up.”
 
@@ -161,6 +187,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 ## TB-14 — Independent box-level feasibility heuristics are not a team
 
+**Status:** Open. Coverage ceilings and per-requirement loops are still independent of one another.
+
 **Evidence:** `src/padbox/mechanics/coverage.py:710–774` greedily maximizes a restricted SB ceiling without damage-color/role checks. `_colors` and `_loop` at777–841,1001–1084 evaluate each requirement independently with the same remaining box budget. `_loop` does not reject unknown-bearing providers or schedule casts.
 
 **Observed example:** Current Rozé coverage ceiling is38 with off-color/other strongest-SB forms; no-assist supplied lineup is20. The ceiling explicitly reports `is_team:false`. Other role reports can simultaneously cite incompatible evolutions of the same copy. Per-condition loop calculations do not reserve copies for each other.
@@ -170,6 +198,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 **Missing regression evidence:** Two requirements competing for one copy, unavailable support slots, full joint resource budgets, and summed-uptime cases without a realizable schedule.
 
 ## TB-15 — Actual acquired states are absent
+
+**Status:** Partial. Max skill and the full normal-awakening list are labeled assumptions, and `required_at_base_skill` sits beside the max-skill requirement. Per-copy skill level and awakening unlock are still absent. Test: `test_skill_readiness_separates_base_cooldown_from_max_skill`.
 
 **Evidence:** Source cooldown formula at `src/padbox/mechanics/explain.py:252–256` assumes max skill level. `coverage.Card` at56–64 has no player-level/skill-level/unlock state. `src/padbox/mechanics/team.py:629–649` counts all normal reference awakenings. Super/sync/latent menus are deliberately not selected (`coverage.py:1382–1412`).
 
@@ -181,6 +211,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 ## TB-16 — Cache/version integrity has a different boundary during mechanics reads
 
+**Status:** Open. A mechanics read still loads a cached skill file without the fetch-path hash check.
+
 **Evidence:** `src/padbox/sources/adapters.py:49–57` validates a cached payload's SHA-256 when fetched. `src/padbox/mechanics/explain.py:267–310` instead chooses a sidecar by URL/commit and latest fetch timestamp, then loads its sibling file without hash verification. `coverage.py:130–135` chooses one index using the leader provenance. `database/store.py:105–186` does not remove stale monster IDs absent from later imports.
 
 **Affected example:** A changed cache payload can be consumed by mechanics despite the fetch path's integrity guarantee. Mixed-source/version reference cards can be decoded using a different leader's component index. Curated normalized fields/effects without matching raw skill fields are not the source used by `_load`/`_skill_report`.
@@ -190,6 +222,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 **Missing regression evidence:** Corrupted cached skill payload on direct explain/check, mixed-version references, curated raw/normalized mismatch, and source replacement completeness.
 
 ## TB-17 — Earlier output lacks reproducible provenance
+
+**Status:** Open. The supplied record still lacks the team, equips, and inventory revision needed to reproduce the earlier 29 Skill Boost result.
 
 **Evidence:** User supplied five named subs, helper null, 29/24 SB and prior success, but no equips, source routes, run input revision or saved selection log. Current static SB is20, with missing combo-absorb void. Inventory history includes revision1 and revision2, differing by newly added #11399. Runtime reconstruction records both documents with current implementation.
 
@@ -201,6 +235,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 ## TB-18 — Copy-count field names describe group counts
 
+**Status:** Fixed. `candidate_groups` and `omitted_groups` count monster IDs. `candidate_copies` and `omitted_copies` remain aliases of those group counts. Test: `test_pool_group_counts_stay_separate_from_copy_quantities`.
+
 **Evidence:** `src/padbox/mechanics/team.py:54–56` increments once per nonborrowed candidate group. `_omitted` at320–322 returns the size of an owned-ID set difference, not summed quantities.
 
 **Observed example:** `candidate_copies=523` and `omitted_copies=163` partition686 monster IDs; the applied inventory has832 copies. Multiple Ciel/Kushinadahime/Leona quantities do not each create a candidate group.
@@ -211,6 +247,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 ## TB-19 — Leader evolution investment is not in the check output list
 
+**Status:** Fixed. A leader reached by evolution is the first `investments` row, ahead of a sub evolution. A directly owned leader stays out of that list. Test: `test_leader_evolution_investment_is_listed_with_the_subs`.
+
 **Evidence:** `src/padbox/mechanics/team.py:673–691` builds investments from `selections` only. The leader's reservation is outside those selections; its materials are nevertheless counted by `_copy_problems` at474–477. Leader reservation/path/spends exist in the coverage report at `coverage.py:1175–1185`.
 
 **Affected example:** A leader reachable only by evolution can be constructible and consume materials while `check_team.investments` lists no corresponding leader evolution. `investments:[]` therefore does not certify that no evolution work is needed.
@@ -220,6 +258,8 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 **Missing regression evidence:** Leader reservation through evolution, distinguished from sub and equip investments.
 
 ## TB-20 — Gaia ID mismatch and unsupported evolving active
+
+**Status:** Open. Active type 232 is still undecoded, and the #8736 / #8336 name mismatch is unchanged.
 
 **Evidence:** Local reference identifies #8736 as **Feathers of Fierce Wings**; named **Ultraman Gaia (V2)** is #8336. Literal #8736 is not owned/reachable. #8336 is owned once, has source active type232 with params `[26757,26760]`, and is unknown because `src/padbox/mechanics/decode.py:120,1375–1425` only expands compounds116/138 and has no232 leaf.
 

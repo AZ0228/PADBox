@@ -415,7 +415,7 @@ def check_team_command(
     leader: int,
     team: Annotated[Path, typer.Argument(help="JSON file naming subs and assists")],
 ) -> None:
-    """Check a named team for copy conflicts, unreachable forms, and open holes."""
+    """Check a named team's shape, ownership, evolution, transforms, coverage, and unknowns."""
     from padbox.mechanics.team import check_team
 
     try:

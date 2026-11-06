@@ -234,7 +234,9 @@ def test_skill_boost_ceiling_uses_other_copies_and_not_a_team(tmp_path: Path):
     )
     report = cover_box(store, 2, skill_index={})
     ceiling = report["transform"]["ceiling"]
-    assert ceiling["total"] == 82
+    # TB-01: a missing helper used to open a fifth sub slot in this ceiling.
+    assert ceiling["sub_slots"] == 4
+    assert ceiling["total"] == 66
     assert ceiling["chosen"] == [
         {
             "owned_id": 80,
@@ -242,7 +244,7 @@ def test_skill_boost_ceiling_uses_other_copies_and_not_a_team(tmp_path: Path):
             "form_id": 80,
             "form_name": "Boost",
             "skill_boost": 16,
-            "copies": 5,
+            "copies": 4,
         }
     ]
     assert ceiling["meets_requirement"] is True
@@ -498,6 +500,7 @@ def test_stackable_material_is_free_and_a_specific_monster_is_spent(tmp_path: Pa
     assert report["leader"]["available_copies"] == 1
     assert report["leader"]["reserved_from"] == 1
     assert report["leader"]["spends"] == []
+    assert report["leader"]["assumed_materials"] == [9]
 
     spent = Store(tmp_path / "spent")
     spent.load_monsters(

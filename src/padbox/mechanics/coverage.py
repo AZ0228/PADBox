@@ -3,6 +3,7 @@
 This reports which verified roles owned copies can reach. It does not pick a team,
 score cards, or spend the badge. Each copy can become one form. An assist
 evolution spends that copy. A borrowed helper does not have to be owned.
+A standard team has four sub slots. A missing helper does not open a fifth.
 """
 
 import json
@@ -24,10 +25,15 @@ from padbox.mechanics.awakenings import (
 )
 from padbox.mechanics.decode import DECODER_VERSION, Effect
 from padbox.mechanics.explain import _index, _skill_report, roles_from
+from padbox.mechanics.result import CheckResult
 
 _ENTRY_KINDS = {"evolution", "assist_evolution"}
 _MAX_DEPTH = 8
+# Ordeal and other recipes use this id for a requirement the reference does not describe.
+_SPECIAL_MATERIAL = 65535
 _PROVIDER_LIMIT = 30
+# One leader, four subs, and one helper. The helper slot is never a fifth sub.
+STANDARD_SUB_SLOTS = 4
 _ROLES = (
     ("bind_clear", "bind clear", lambda effect: effect.kind == "bind_clear"),
     ("awoken_bind_clear", "awoken bind clear", lambda effect: effect.kind == "awoken_bind_clear"),
@@ -85,6 +91,8 @@ class BoxSession:
     reserved_from: int | None
     reserved_path: list[str]
     spends: list[int]
+    assumed_materials: list[int]
+    special_requirements: list[dict[str, Any]]
     helper: dict[str, Any] | None
     buckets: dict[str, list[dict[str, Any]]]
     haste: list[dict[str, Any]]
@@ -147,8 +155,17 @@ def leader_context(
         entry_id = entries[0]
         reserved_path: list[str] = []
         spends: list[int] = []
+        assumed_materials: list[int] = []
+        special_requirements: list[dict[str, Any]] = []
         if reservation:
-            reserved_from, entry_id, spends, reserved_path = reservation
+            (
+                reserved_from,
+                entry_id,
+                spends,
+                reserved_path,
+                assumed_materials,
+                special_requirements,
+            ) = reservation
             remaining[reserved_from] = remaining.get(reserved_from, 0) - 1
             for material_id in spends:
                 remaining[material_id] = remaining.get(material_id, 0) - 1
@@ -222,6 +239,8 @@ def leader_context(
             reserved_from=reserved_from,
             reserved_path=reserved_path,
             spends=spends,
+            assumed_materials=assumed_materials,
+            special_requirements=special_requirements,
             helper=helper,
             buckets=buckets,
             haste=haste,
@@ -232,8 +251,13 @@ def leader_context(
         )
 
 
+def uptime_covers(uptime: float) -> bool:
+    """True when reciprocal-cooldown uptime keeps an ordinary linked board up."""
+    return uptime >= 1 - 1e-9
+
+
 def _cover_report(session: BoxSession) -> dict[str, Any]:
-    sub_slots = 4 if session.helper else 5
+    sub_slots = STANDARD_SUB_SLOTS
     transform = _transform(
         session.entry,
         session.entry_facts,
@@ -299,6 +323,8 @@ def _cover_report(session: BoxSession) -> dict[str, Any]:
             session.reserved_path,
             session.spends,
             session.transforms,
+            session.assumed_materials,
+            session.special_requirements,
         ),
         "helper": _helper_report(session.helper, session.load, session.facts_for)
         if session.helper
@@ -416,65 +442,160 @@ def _identity(
     return [monster_id], [monster_id], False
 
 
+def _blank_route() -> dict[str, Any]:
+    return {
+        "path": [],
+        "spends": [],
+        "assumed_materials": [],
+        "special_requirements": [],
+    }
+
+
+def _route_rank(route: dict[str, Any]) -> tuple[int, int]:
+    """Clean exact routes outrank ones with an uninterpreted requirement."""
+    return (1 if route["special_requirements"] else 0, len(route["spends"]))
+
+
+def _same_materials(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    return (
+        left["spends"] == right["spends"]
+        and left["assumed_materials"] == right["assumed_materials"]
+        and _special_key(left) == _special_key(right)
+    )
+
+
+def _special_key(route: dict[str, Any]) -> tuple[tuple[int, str], ...]:
+    return tuple(
+        (int(item["monster_id"]), str(item["reason"])) for item in route["special_requirements"]
+    )
+
+
+def _keep_route(
+    best: dict[int, list[dict[str, Any]]], target: int, route: dict[str, Any], queue: deque[int]
+) -> None:
+    current = best.get(target)
+    if current is None:
+        best[target] = [route]
+        queue.append(target)
+        return
+    rank = _route_rank(route)
+    best_rank = min(_route_rank(item) for item in current)
+    if rank > best_rank:
+        return
+    if rank < best_rank:
+        best[target] = [route]
+        queue.append(target)
+        return
+    if any(_same_materials(item, route) for item in current):
+        return
+    current.append(route)
+    queue.append(target)
+
+
+def _primary_route(routes: list[dict[str, Any]]) -> dict[str, Any]:
+    return min(routes, key=lambda route: (_route_rank(route), tuple(route["path"])))
+
+
+def _form_from_route(form_id: int, stage: str, routes: list[dict[str, Any]]) -> dict[str, Any]:
+    primary = _primary_route(routes)
+    return {
+        "form_id": form_id,
+        "path": list(primary["path"]),
+        "spends": list(primary["spends"]),
+        "assumed_materials": list(primary["assumed_materials"]),
+        "special_requirements": list(primary["special_requirements"]),
+        "stage": stage,
+        "routes": routes,
+    }
+
+
 def _reachable(
     start_id: int,
     outgoing: dict[int, list[tuple[int, str]]],
     load: Any,
     owned: dict[int, int],
 ) -> list[dict[str, Any]]:
-    best_spends: dict[int, tuple[int, ...]] = {start_id: ()}
-    best_path: dict[int, list[str]] = {start_id: []}
+    best: dict[int, list[dict[str, Any]]] = {start_id: [_blank_route()]}
     queue: deque[int] = deque([start_id])
+    expanded: set[tuple[int, tuple[str, ...], tuple[int, ...], tuple[tuple[int, str], ...]]] = set()
     while queue:
         current = queue.popleft()
-        path = best_path[current]
-        if len(path) >= _MAX_DEPTH:
-            continue
-        for target, kind in outgoing.get(current, []):
-            if kind not in _ENTRY_KINDS or load(target) is None:
+        for route in list(best[current]):
+            key = (current, tuple(route["path"]), tuple(route["spends"]), _special_key(route))
+            if key in expanded:
                 continue
-            extra = _material_cost(load(target), load, owned)
-            if extra is None:
+            expanded.add(key)
+            if len(route["path"]) >= _MAX_DEPTH:
                 continue
-            spends = tuple(sorted((*best_spends[current], *extra)))
-            if target in best_spends and len(best_spends[target]) <= len(spends):
-                continue
-            best_spends[target] = spends
-            best_path[target] = [*path, kind]
-            queue.append(target)
-    forms = []
-    for form_id, path in best_path.items():
-        forms.append(
-            {
-                "form_id": form_id,
-                "path": list(path),
-                "spends": list(best_spends[form_id]),
-                "stage": "entry",
-            }
-        )
-        for target, kind in outgoing.get(form_id, []):
-            if kind == "transform" and load(target) is not None:
-                forms.append(
+            for target, kind in outgoing.get(current, []):
+                if kind not in _ENTRY_KINDS or load(target) is None:
+                    continue
+                extra = _material_cost(load(target), load, owned)
+                if extra is None:
+                    continue
+                _keep_route(
+                    best,
+                    target,
                     {
-                        "form_id": target,
-                        "path": [*path, "transform"],
-                        "spends": list(best_spends[form_id]),
-                        "stage": "battle",
-                    }
+                        "path": [*route["path"], kind],
+                        "spends": sorted([*route["spends"], *extra["spends"]]),
+                        "assumed_materials": sorted(
+                            [*route["assumed_materials"], *extra["assumed_materials"]]
+                        ),
+                        "special_requirements": [
+                            *route["special_requirements"],
+                            *extra["special_requirements"],
+                        ],
+                    },
+                    queue,
                 )
+    forms = []
+    for form_id, routes in best.items():
+        forms.append(_form_from_route(form_id, "entry", routes))
+        for target, kind in outgoing.get(form_id, []):
+            if kind != "transform" or load(target) is None:
+                continue
+            battle = [
+                {**route, "path": [*route["path"], "transform"]}
+                for route in routes
+            ]
+            forms.append(_form_from_route(target, "battle", battle))
     return forms
 
 
-def _material_cost(child: Card, load: Any, owned: dict[int, int]) -> tuple[int, ...] | None:
+def _material_cost(child: Card, load: Any, owned: dict[int, int]) -> dict[str, Any] | None:
+    """Exact non-stackable spends, stackable assumptions, and uninterpreted requirements.
+
+    Returns None when a known non-stackable material is not owned. A stackable is
+    assumed, not spent. A missing reference id or the ordeal sentinel stays on the
+    route as a special requirement instead of deleting the route.
+    """
     needed: Counter[int] = Counter()
+    assumed: list[int] = []
+    special: list[dict[str, Any]] = []
     for value in child.raw.get("evoMaterials") or []:
         if not value:
             continue
         material_id = int(value)
+        if material_id == _SPECIAL_MATERIAL:
+            special.append(
+                {
+                    "monster_id": material_id,
+                    "reason": "Special evolution requirement is untracked.",
+                }
+            )
+            continue
         material = load(material_id)
         if material is None:
-            return None
+            special.append(
+                {
+                    "monster_id": material_id,
+                    "reason": "Evolution material is not in the local reference set.",
+                }
+            )
+            continue
         if material.raw.get("stackable"):
+            assumed.append(material_id)
             continue
         needed[material_id] += 1
     if any(owned.get(material_id, 0) < count for material_id, count in needed.items()):
@@ -482,29 +603,47 @@ def _material_cost(child: Card, load: Any, owned: dict[int, int]) -> tuple[int, 
     spent: list[int] = []
     for material_id, count in needed.items():
         spent.extend([material_id] * count)
-    return tuple(spent)
+    return {"spends": spent, "assumed_materials": assumed, "special_requirements": special}
 
 
 def _reserve(
     entries: list[int],
     forms_by_owned: dict[int, list[dict[str, Any]]],
     owned: dict[int, int],
-) -> tuple[int, int, list[int], list[str]] | None:
+) -> tuple[int, int, list[int], list[str], list[int], list[dict[str, Any]]] | None:
     options = []
     for entry_id in entries:
         for owned_id, forms in forms_by_owned.items():
             for form in forms:
                 if form["form_id"] != entry_id or form["stage"] != "entry":
                     continue
-                if not _payable(owned_id, form["spends"], owned):
-                    continue
-                options.append(
-                    (len(form["spends"]), owned_id != entry_id, owned_id, entry_id, form)
-                )
+                for route in form.get("routes") or [form]:
+                    if not _payable(owned_id, route["spends"], owned):
+                        continue
+                    options.append(
+                        (
+                            _route_rank(route),
+                            tuple(route["path"]),
+                            tuple(route["spends"]),
+                            owned_id != entry_id,
+                            owned_id,
+                            entry_id,
+                            route,
+                        )
+                    )
     if not options:
         return None
-    _, _, owned_id, entry_id, form = min(options)
-    return owned_id, entry_id, list(form["spends"]), list(form["path"])
+    _, _, _, _, owned_id, entry_id, route = min(
+        options, key=lambda item: (item[0], item[1], item[2], item[3], item[4], item[5])
+    )
+    return (
+        owned_id,
+        entry_id,
+        list(route["spends"]),
+        list(route["path"]),
+        list(route["assumed_materials"]),
+        list(route["special_requirements"]),
+    )
 
 
 def _payable(owned_id: int, spends: list[int], owned: dict[int, int]) -> bool:
@@ -523,7 +662,10 @@ def _count_available(
         for owned_id, forms in forms_by_owned.items():
             for form in forms:
                 if form["form_id"] == entry_id and form["stage"] == "entry":
-                    options.append((len(form["spends"]), owned_id, form["spends"]))
+                    for route in form.get("routes") or [form]:
+                        options.append(
+                            (_route_rank(route), owned_id, list(route["spends"]))
+                        )
     pool = Counter(owned)
     available = 0
     while True:
@@ -552,13 +694,24 @@ def _helper(
     entry = load(entries[0])
     if entry is None:
         raise ValueError(f"Monster #{entries[0]} is not in the local reference set")
-    forms = [{"form_id": entry.monster_id, "path": [], "spends": [], "stage": "entry"}]
+    forms = [
+        {
+            "form_id": entry.monster_id,
+            "path": [],
+            "spends": [],
+            "assumed_materials": [],
+            "special_requirements": [],
+            "stage": "entry",
+        }
+    ]
     if transforms:
         forms.extend(
             {
                 "form_id": combat_id,
                 "path": ["transform"],
                 "spends": [],
+                "assumed_materials": [],
+                "special_requirements": [],
                 "stage": "battle",
             }
             for combat_id in combats
@@ -660,34 +813,52 @@ def _transform(
     if not cards:
         return {
             "required_turns": None,
+            "result": CheckResult.PASS.value,
             "cards": [],
             "ceiling": None,
             "note": "This leader does not transform.",
         }
-    known = [card["required_turns"] for card in cards]
-    decoded = all(turn is not None for turn in known)
-    required = max(known) if decoded else None
+    known = [turn for turn in (card["required_turns"] for card in cards) if isinstance(turn, int)]
+    unresolved = any(card["required_turns"] is None for card in cards)
+    required = max(known) if known else None
     helper_boost = skill_boost(helper["card"].awakenings) if helper else 0
+    ceiling = _ceiling(
+        skill_boost(entry.awakenings),
+        skill_boost(entry.awakenings) if reserved else 0,
+        helper_boost,
+        remaining,
+        forms_by_owned,
+        load,
+        sub_slots,
+        required,
+        reserved,
+        not unresolved,
+    )
+    result = _transform_result(unresolved, required, ceiling["total"], reserved)
+    ceiling["meets_requirement"] = result is CheckResult.PASS
+    ceiling["result"] = result.value
     return {
         "required_turns": required,
+        "result": result.value,
         "cards": cards,
-        "ceiling": _ceiling(
-            skill_boost(entry.awakenings),
-            skill_boost(entry.awakenings) if reserved else 0,
-            helper_boost,
-            remaining,
-            forms_by_owned,
-            load,
-            sub_slots,
-            required,
-            reserved,
-            decoded,
-        ),
+        "ceiling": ceiling,
         "note": (
             "The transform skill's own haste charges other skills when it is used. "
             "It does not reduce this cooldown."
         ),
     }
+
+
+def _transform_result(
+    unresolved: bool, required: int | None, total: int, reserved: bool
+) -> CheckResult:
+    """Known cooldowns still fail when short. An unresolved cooldown never passes."""
+    known_short = required is not None and (not reserved or total < required)
+    if known_short:
+        return CheckResult.FAIL
+    if unresolved or required is None:
+        return CheckResult.UNKNOWN
+    return CheckResult.PASS
 
 
 def _transform_card(
@@ -696,12 +867,14 @@ def _transform_card(
     targets = facts["active_roles"]["transform_into"]
     matched = any(combat in targets for combat in combats)
     cooldown = facts["active"]["minimum_cooldown"] if matched else None
+    base = facts["active"].get("base_cooldown") if matched else None
     return {
         "role": role,
         "entry_id": card.monster_id,
         "entry_name": card.name,
         "combat_ids": combats,
         "required_turns": cooldown,
+        "base_required_turns": base if isinstance(base, int) else None,
         "skill_boost": skill_boost(card.awakenings),
         "haste_on_this_skill": facts["active_roles"]["charge_other_skills_turns"],
     }
@@ -1063,7 +1236,7 @@ def _loop(
                 "minimum_cooldown": cooldown,
             }
         )
-    return {"fits": uptime >= 1 - 1e-9, "uptime": round(uptime, 3), "used": used}
+    return {"fits": uptime_covers(uptime), "uptime": round(uptime, 3), "used": used}
 
 
 def _best_force(
@@ -1156,6 +1329,8 @@ def _leader_report(
     reserved_path: list[str],
     spends: list[int],
     transforms: bool,
+    assumed_materials: list[int],
+    special_requirements: list[dict[str, Any]],
 ) -> dict[str, Any]:
     after = []
     if transforms:
@@ -1182,6 +1357,8 @@ def _leader_report(
         "reserved_from": reserved_from,
         "reserved_path": reserved_path,
         "spends": spends,
+        "assumed_materials": list(assumed_materials),
+        "special_requirements": list(special_requirements),
         "skill_boost": skill_boost(entry.awakenings),
         "awakenings": [describe(awakening_id) for awakening_id in entry.awakenings],
         "before_transform": {
@@ -1286,10 +1463,11 @@ def _holes(
                 f"transform into {targets}."
             )
     ceiling = transform["ceiling"]
-    if ceiling and transform["required_turns"] is not None and not ceiling["meets_requirement"]:
+    required = transform["required_turns"]
+    if ceiling and isinstance(required, int) and ceiling["total"] < required:
         holes.append(
             f"Skill boost on awakenings reaches {ceiling['total']}, short of the "
-            f"{transform['required_turns']}-turn transform. This ceiling is not a team, "
+            f"{required}-turn transform. This ceiling is not a team, "
             "and the badge is not included."
         )
     for key, label, _ in _ROLES:
