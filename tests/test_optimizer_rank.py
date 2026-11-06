@@ -78,6 +78,7 @@ def _gap(left_key: tuple, right_key: tuple, objective: str) -> str:
 
 
 def test_team_optimize_cli_returns_ranked_reports(regression_store, monkeypatch):
+    # ``--json`` selects the machine-readable report. The default stdout is text.
     monkeypatch.setattr("padbox.cli.logging.basicConfig", lambda **kwargs: None)
     _box(regression_store)
     result = CliRunner().invoke(
@@ -99,6 +100,7 @@ def test_team_optimize_cli_returns_ranked_reports(regression_store, monkeypatch)
             "1",
             "--simulations",
             "1",
+            "--json",
         ],
     )
     assert result.exit_code == 0, result.output

@@ -23,7 +23,12 @@ from padbox.evaluator.score import OBJECTIVE_ORDER, ObjectiveName
 from padbox.evaluator.sim import DEFAULT_SEED, DEFAULT_SIMULATIONS, DEFAULT_TURNS
 from padbox.inventory.snapshots import current_box
 from padbox.mechanics.coverage import STANDARD_SUB_SLOTS
-from padbox.optimizer.candidates import Candidate, CandidatePool, generate_candidates
+from padbox.optimizer.candidates import (
+    Candidate,
+    CandidatePool,
+    PrunedCandidate,
+    generate_candidates,
+)
 
 DEFAULT_BEAM_WIDTH = 200
 HelperSupply = Literal["owned", "explicit"]
@@ -87,7 +92,10 @@ class SearchedTeam(_Strict):
 
 
 class SearchResult(_Strict):
-    """Beam search for one leader. ``ranked`` is the simulated beam in evaluator order."""
+    """Beam search for one leader. ``ranked`` is the simulated beam in evaluator order.
+
+    ``pruned`` is every candidate removed before that beam, with the reason.
+    """
 
     leader_id: int
     objective: ObjectiveName
@@ -101,6 +109,7 @@ class SearchResult(_Strict):
     ranked: list[SearchedTeam]
     notes: list[str] = Field(default_factory=list)
     dungeon: DungeonProfile | None = None
+    pruned: list[PrunedCandidate] = Field(default_factory=list)
 
 
 @dataclass
@@ -150,19 +159,19 @@ def search_teams(
     leader = next((row for row in built.candidates if row.kind == "leader"), None)
     if leader is None:
         notes.append("No owned copy can become this leader.")
-        return _empty(leader_id, scenario, beam_width, notes)
+        return _empty(leader_id, scenario, beam_width, notes, pruned=built.pruned)
     counts = _box_counts(store)
     after_leader = _consume(counts, leader)
     if after_leader is None:
         notes.append("The leader's copy and evolution spends are not available together.")
-        return _empty(leader_id, scenario, beam_width, notes)
+        return _empty(leader_id, scenario, beam_width, notes, pruned=built.pruned)
     leader_used = frozenset({(leader.owned_id, leader.copy_index)})
     helpers = _helper_rows(built, helper_id)
     if not helpers:
         notes.append(
             "No helper is available. Pass an explicit helper, or own a copy with a leader skill."
         )
-        return _empty(leader_id, scenario, beam_width, notes)
+        return _empty(leader_id, scenario, beam_width, notes, pruned=built.pruned)
     essential = tuple(dict.fromkeys((*built.essential_roles, *answer_keys(dungeon))))
     transform_turns = built.transform_turns
     opening = _open_helpers(
@@ -170,7 +179,7 @@ def search_teams(
     )
     if not opening:
         notes.append("Every helper copy conflicts with the reserved leader copy or its spends.")
-        return _empty(leader_id, scenario, beam_width, notes)
+        return _empty(leader_id, scenario, beam_width, notes, pruned=built.pruned)
     states = _keep_diverse(_dedupe(opening), beam_width)
     subs = [row for row in built.candidates if row.kind == "sub"]
     scored = 0
@@ -190,7 +199,7 @@ def search_teams(
                 f"No legal team reached {STANDARD_SUB_SLOTS} subs. "
                 f"Search stopped while filling sub {slot + 1}."
             )
-            return _empty(leader_id, scenario, beam_width, notes, scored)
+            return _empty(leader_id, scenario, beam_width, notes, scored, built.pruned)
     beam = [_public(state) for state in states]
     from padbox.optimizer.assists import attach_assists
 
@@ -231,6 +240,7 @@ def search_teams(
         ranked=ranked,
         notes=notes,
         dungeon=dungeon,
+        pruned=list(built.pruned),
     )
 
 
@@ -258,6 +268,7 @@ def _empty(
     beam_width: int,
     notes: list[str],
     scored: int = 0,
+    pruned: list[PrunedCandidate] | None = None,
 ) -> SearchResult:
     return SearchResult(
         leader_id=leader_id,
@@ -272,6 +283,7 @@ def _empty(
         ranked=[],
         notes=notes,
         dungeon=scenario.dungeon,
+        pruned=list(pruned or []),
     )
 
 

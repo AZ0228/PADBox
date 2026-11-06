@@ -65,3 +65,18 @@ Rozé #13967 leader 64136 is three clauses. They are evaluated separately:
 Rank EXP on #13966 skill 64128 is a decoded leader effect. It is not an activation clause.
 
 A combo threshold, an HP threshold, an attribute requirement, a type requirement, an L match, a row, and a multi-color count can be evaluated when a clause carries that condition and the observation supplies that fact. None of those conditions is inferred from a cross or from a linked count. The regression leaders do not currently decode a combo-count or HP-threshold skill; those shapes remain available for a clause that names them.
+
+## Limits outside the decoder
+
+These are modeled only as far as the tests show. Each one stays explicit in the report. None of them is treated as a success.
+
+- There is no orb-path solver. Matching is the greedy policy in `docs/team-evaluator.md`. It does not cascade. Activation rates are `policy_approximation`.
+- Enemy damage is not applied. Survivability stays unresolved, and recovery sufficiency is not a metric. A team at full HP is not recorded as having survived an attack.
+- The simulator does not record attack-multiplier success, attribute-match success, or damage-cap success. With no damage target, the damage component stays unresolved. Shield uptime is not its own rate. `active_effect_uptime` is the timed-effect rate.
+- An increased skyfall rate has no modeled weight, so the draw stays uniform. A duration given as a range stays unknown and is not applied as a number.
+- Dungeon profile names `skill_delay`, `resolve`, `enemy_shield`, and `hp_threshold` have no response model. They stay `unknown`. Enemy HP is not a damage target, and preemptive damage is not applied. The profile does not say which turn a mechanic occurs. A floor is not called cleared.
+- Gaia's type 232 `loops` flag is absent, so the evolving sequence stays `unknown` after the last stage. That limit is the row above for skill 26756.
+
+## Verification
+
+`tests/test_clauses.py` checks that every unsupported effect on the regression actives and leader skills is a row in the table above, and that skills 21122 and 26756 stay unknown. `tests/test_decode_fixtures.py` checks that description text does not change those effects. `tests/test_evaluator_board.py` and `tests/test_evaluator_metrics.py` lock the greedy-policy gaps: a line of five is not a cross, hearts can be kept, increased skyfall has no weight, and recovery sufficiency is omitted. `tests/test_evaluator_dungeon.py` locks the four unmodeled encounter names.

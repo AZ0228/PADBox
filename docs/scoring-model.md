@@ -2,7 +2,7 @@
 
 `evaluate_team` ranks one supplied team with the formulas below. The optimizer may call that ranking only for the objective and the search scope named on the run. `check_team` does not apply these formulas, and its `strategic_quality` stays `not_evaluated`.
 
-Hard checks come first and are not folded into the score: board size, team shape, a complete team, ownership, evolution, leader legality, helper legality, known transforms, mechanics coverage, each decoder requirement, and each scenario requirement. A requirement whose result is `unknown` stays unresolved. An unresolved hard check excludes the team from a scalar and does not become a zero.
+Hard checks come first and are not folded into the score: board size, team shape, a complete team, ownership, evolution, leader legality, helper legality, known transforms, mechanics coverage, each decoder requirement, each scenario requirement, and each dungeon floor mechanic named `floor:<n>:<mechanic>`. A requirement whose result is `unknown` stays unresolved. An unresolved hard check excludes the team from a scalar and does not become a zero. An unmodeled dungeon mechanic is `unknown`, so the scalar stays absent. A modeled miss is `fail`, so the team is excluded. Floor checks do not add a fifth rank term.
 
 `strategic_quality` on the evaluation report is then:
 
@@ -128,4 +128,8 @@ score = rounded_0 * 1001^3 + rounded_1 * 1001^2 + rounded_2 * 1001 + rounded_3
 - Board 6×5, greedy matching, `policy_approximation`.
 - Recovery is not requested, so the skill policy does not spend hearts only to heal.
 
-On this scenario the scalar is absent. Activation consistency, mechanic coverage, and flexibility are still reported, and mechanic coverage uses the decoder-requirement share because the simulator has no mechanic list to time.
+On this scenario the scalar is absent. Activation consistency, mechanic coverage, and flexibility are still reported, and mechanic coverage uses the decoder-requirement share because the simulator has no mechanic list to time. A dungeon profile on the scenario can replace that share with `mechanic_response_availability` when every named requirement resolved and the simulator timed the response. Unknown requirements still leave the coverage value unresolved.
+
+## Verification
+
+`tests/test_evaluator_score.py` locks the tuple order, the `1001` place values, half-up rounding, an unresolved component with no scalar, exclusion on a failed hard check, the six objective permutations, and flexibility that forgives one redundant copy. `tests/test_evaluator_team.py` locks that `evaluate_team` records the ruleset, scenario, seed, and provenance, and that an unknown transform or an unknown special evolution does not become a pass or a zero. `tests/test_evaluator_dungeon.py` locks the floor checks: a floor is handled only when every listed mechanic is modeled and met, and skill delay, resolve, enemy shields, and HP thresholds stay unknown.

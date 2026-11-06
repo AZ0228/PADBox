@@ -1,6 +1,6 @@
 # Skill state model
 
-`padbox.mechanics.skill_state` is the active-skill state machine. It does not select a team, schedule a battle, or score one. A later simulator can tick and use these slots. Legality of a transform, an evolution, or an equip stays with the team checker.
+`padbox.mechanics.skill_state` is the active-skill state machine. It does not select a team, schedule a battle, or score one. `padbox.evaluator.sim` is the code that ticks these slots. It applies skill boost, haste, skill delay, and assist overcharge around the counter. This module still only steps the counter by one and refuses a cast that is not ready. Legality of a transform, an evolution, or an equip stays with the team checker.
 
 A skill is a set of states. The slot has one current state. That state is the only active the monster can use on a turn.
 
@@ -90,7 +90,13 @@ The inherited counter is that assist skill's own minimum under the same max-skil
 ## Still unresolved
 
 - `tick` subtracts one charge. It does not apply haste, skill delay, skill boosts, or assist overcharge. `padbox.evaluator.sim` applies those around the counter.
-- The post-transform and post-stage counter is the labeled `state_minimum` rule.
-- Gaia's sequence has no loop-or-end flag in the snapshot decode.
+- The post-transform and post-stage counter is the labeled `state_minimum` rule. The snapshot does not record a separate charge for the moment after a transform or a stage change.
+- Gaia's sequence has no loop-or-end flag in the snapshot decode. The machine stays `unknown` until a caller passes `loops` or `ends`.
 - Leader skills are outside this machine.
-- This module does not choose a cast order or report a battle result.
+- This module does not choose a cast order or report a battle result. The fixed cast order is the skill-use policy in `docs/team-evaluator.md`.
+
+## Verification
+
+`tests/test_skill_state.py` builds the machines from the committed card extracts. It locks Rozé's one-cast transform and the 24-turn minimum, Saphira's entry transform onto Bright Solution, a missing transform card staying unknown, Gaia's two stages firing separately with `sequence` unknown, an explicit loop or end, the same-turn block when the next minimum is 0, a missing evolving stage that is not skipped, and an inherited active replacing the host active.
+
+`tests/test_evaluator_sim.py` runs those machines inside a battle. It locks that no active fires before its counter is ready and no transform runs before its prerequisites, including Rozé's haste leaving the new cooldown, Saphira's quantities, Gaia's stages on separate turns, and assist charge spending the host cooldown first.

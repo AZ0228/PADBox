@@ -8,7 +8,7 @@ A result is the diverse beam for the objective, seed, turn count, and simulation
 
 The search is a staged beam. It does not enumerate every lineup once the pool is larger than the beam, and it does not add an optimization dependency.
 
-1. Generate the broad pool with `generate_candidates`. That pool already dropped unreachable forms, ownership conflicts, hard incompatibilities, missing essential roles, and clearly dominated forms of the same card. An unverified effect is an uncertainty score on the card. It is not a reason the pool dropped the card.
+1. Generate the broad pool with `generate_candidates`. That pool already dropped unreachable forms, ownership conflicts, hard incompatibilities, missing essential roles, and clearly dominated forms of the same card. `SearchResult.pruned` keeps every dropped row and its reason. An unverified effect is an uncertainty score on the card. It is not a reason the pool dropped the card.
 2. Keep one leader: the owned copy reserved for the requested leader. If no owned copy can become that leader, the search stops.
 3. Choose the helper with the policy below. The helper's copy, when it is owned, is reserved before subs are chosen.
 4. Fill exactly four sub slots. A candidate may enter a slot when it is a sub, its `(owned_id, copy_index)` is still free, and the box still has its copy plus every monster id on its evolution spend. One copy fills only one role: leader, helper, or a single sub. Forms of one copy stay alternatives.
@@ -111,7 +111,7 @@ An equip that moves a known leader-color sub attribute off every leader color is
 
 `beam_width` must be positive. `turns` and `simulations` must be positive. The scenario on each finalist report stores the objective, seed, turns, and simulations actually used.
 
-`padbox team optimize --leader ID [--helper ID] [--objective NAME]` runs this search. `--beam-width`, `--seed`, `--turns`, and `--simulations` override the table. `--dungeon FILE` loads a versioned dungeon profile and passes it as the scenario to each finalist's `evaluate_team`. Every listed mechanic is an essential requirement. A floor is handled only when every one of those requirements is modeled and met. Unmodeled mechanics are uncertainties, not reasons to drop a card. The search does not say a team clears a floor. `padbox team evaluate --team FILE` scores one supplied team and does not search. `padbox team compare A B` compares two named teams and selects neither. `padbox evaluate` stays the recognition-accuracy command.
+`padbox team optimize --leader ID [--helper ID] [--objective NAME]` runs this search. `--beam-width`, `--seed`, `--turns`, and `--simulations` override the table. `--dungeon FILE` loads a versioned dungeon profile and passes it as the scenario to each finalist's `evaluate_team`. Every listed mechanic is an essential requirement. A floor is handled only when every one of those requirements is modeled and met. Unmodeled mechanics are uncertainties, not reasons to drop a card. The search does not say a team clears a floor. `padbox team evaluate --team FILE` scores one supplied team and does not search. `padbox team compare A B` compares two named teams and selects neither. Those three commands print the text sections in `docs/team-evaluator.md`. `--json` prints the model, and the text and the JSON both record the seed, turn count, and simulation count. Pruned candidates are listed with the reason each one was dropped. `padbox evaluate` stays the recognition-accuracy command.
 
 ## What this search cannot guarantee
 
@@ -123,3 +123,24 @@ An equip that moves a known leader-color sub attribute off every leader color is
 - The timing plan is not the Monte Carlo cast list. It does not apply a haste amount. A transforming card is scored with the fielded form's skill boost; `evaluate_team` counts the pre-transform entry for that card. A transforming sub's own cooldown is not inside `transform_turns` unless it was already the pool's recorded cooldown.
 - A dungeon profile does not make this search a clear. A finalist handles a floor only when that team's evaluation shows every listed mechanic modeled and met. Unmodeled mechanics, enemy HP, and preemptive damage stay uncertainties. Teams the beam dropped were not checked against the dungeon.
 - Two copies of one monster may both be subs. One copy may not fill two roles. Evolution materials are spent from the same box counts, one lineup at a time.
+
+## Performance
+
+`scripts/benchmark_team.py` times this layer on the 13 committed cards in `tests/fixtures/cards`. It builds the store from those extracts and does not use the network. The leader is #13967. The box owns one copy of each fixture card. The numbers below are one run on macOS 26.6.2 arm64, CPython 3.12.14. An earlier run on the same machine stayed within a few percent (generation 0.0039 s, construction 0.260 s, evaluation 1.68 s, simulation 1.95 s, search 15.9 s).
+
+| Stage | Workload | Measured | Local target |
+| --- | --- | --- | --- |
+| Candidate generation | 20 repeats, median | 0.0039 s. 27 candidates (13 subs, 13 helpers, 1 leader) and 2 pruned | 0.016 s |
+| Team construction | 3 repeats, median. Beam width 200. `evaluate_team` is not run | 0.229 s. 1,292 complete lineups scored, beam 200 | 1.0 s |
+| Evaluation | One lineup, 10 turns, 1,000 simulations, explanations off | 1.654 s, 605 simulations/s | 6.7 s, and at least 151 simulations/s |
+| Simulation | Same lineup through `run_monte_carlo` | 1.915 s, 522 simulations/s, 5,223 turn-steps/s | 7.7 s, and at least 131 simulations/s |
+| Search | Owned helpers, beam 200, 10 turns, 10 simulations, seed 0, objective `general` | 15.89 s. Same 1,292 lineups, 200 finalists | 64 s |
+| Memory | During that search | Python heap peak 45.4 MiB. Process high-water mark 339 MiB | 1,360 MiB process high-water mark |
+
+The lineup for the throughput rows is leader #13967, helper #7712, and subs #8336, #7844, #10756, and #7949. Construction replaces `evaluate_team` with one finished report, so that row is the cheap screen, the diverse beam, and assist selection. Search uses the real evaluator with explanations off, which is what `search_teams` does. The process high-water mark includes the interpreter and imported libraries, not only the search heap.
+
+Each target is four times the measured duration, or four times the process high-water mark, rounded up by the script. The bounds are for this fixture workload. A full box sits outside them. The default search, 1,000 simulations on each of 200 finalists, was not timed as one run. Multiplying the measured 1.654 s evaluation by that beam is about 330 s, plus the 0.229 s of construction. That product is a scaling estimate, not a measured search.
+
+## Verification
+
+`tests/test_optimizer_candidates.py` locks that Apollo #7844 stays in the Rozé pool and that every prune has a reason other than an unknown effect. `tests/test_optimizer_search.py` locks the beam of 200, simulation of finalists only, an explicit helper marked owned or supplied, and a dungeon profile passed through as the scenario. `tests/test_optimizer_assists.py` locks copy reservations and rejection of an assist that overwrites a base active the rotation uses. `tests/test_optimizer_rank.py` locks that the top tested team beats the other tested teams under objective `general` and the recorded search scope, and that the result says it is not a global optimum.

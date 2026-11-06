@@ -439,19 +439,25 @@ def team_evaluate(
         Path, typer.Option("--team", help="JSON team with leader_id, subs, and assists")
     ],
     objective: Annotated[str, typer.Option(help="Scoring objective")] = "general",
-    seed: Annotated[int, typer.Option(help="Monte Carlo seed")] = 0,
-    turns: Annotated[int, typer.Option(min=1)] = 10,
-    simulations: Annotated[int, typer.Option(min=1)] = 1000,
+    seed: Annotated[int, typer.Option(help="Monte Carlo seed recorded on the report")] = 0,
+    turns: Annotated[int, typer.Option(min=1, help="Simulated turns recorded on the report")] = 10,
+    simulations: Annotated[
+        int, typer.Option(min=1, help="Monte Carlo boards recorded on the report")
+    ] = 1000,
     dungeon: Annotated[
         Path | None,
         typer.Option("--dungeon", help="Dungeon profile. Its mechanics are essential requirements"),
     ] = None,
     output: Annotated[Path | None, typer.Option(help="Write the report JSON")] = None,
+    as_json: Annotated[
+        bool, typer.Option("--json", help="Print JSON instead of the text report")
+    ] = False,
 ) -> None:
     """Score one supplied team. This does not search."""
     from pydantic import ValidationError
 
     from padbox.evaluator import Scenario, evaluate_team
+    from padbox.team_reports import format_evaluation
 
     try:
         payload = json.loads(team_file.read_text())
@@ -467,7 +473,8 @@ def team_evaluate(
         report = evaluate_team(payload, scenario, store=ctx.obj)
     except (ValueError, OSError, json.JSONDecodeError, ValidationError) as exc:
         raise typer.BadParameter(str(exc)) from exc
-    _write_json(output, report.model_dump(mode="json"))
+    body = report.model_dump(mode="json")
+    _present(body, format_evaluation(report), as_json=as_json, output=output)
 
 
 @team.command("optimize")
@@ -481,15 +488,21 @@ def team_optimize(
     ] = None,
     objective: Annotated[str, typer.Option(help="Scoring objective")] = "general",
     beam_width: Annotated[int, typer.Option(min=1)] = 200,
-    seed: Annotated[int, typer.Option()] = 0,
-    turns: Annotated[int, typer.Option(min=1)] = 10,
-    simulations: Annotated[int, typer.Option(min=1)] = 1000,
+    seed: Annotated[int, typer.Option(help="Monte Carlo seed recorded on the report")] = 0,
+    turns: Annotated[int, typer.Option(min=1, help="Simulated turns recorded on the report")] = 10,
+    simulations: Annotated[
+        int, typer.Option(min=1, help="Monte Carlo boards recorded on the report")
+    ] = 1000,
     output: Annotated[Path | None, typer.Option(help="Write the ranked JSON")] = None,
+    as_json: Annotated[
+        bool, typer.Option("--json", help="Print JSON instead of the text report")
+    ] = False,
 ) -> None:
     """Search the owned box. Invoke as team optimize."""
     from pydantic import ValidationError
 
     from padbox.optimizer import search_teams
+    from padbox.team_reports import format_search
 
     try:
         result = search_teams(
@@ -505,7 +518,7 @@ def team_optimize(
         )
     except (ValueError, ValidationError) as exc:
         raise typer.BadParameter(str(exc)) from exc
-    _write_json(output, _search_payload(result))
+    _present(_search_payload(result), format_search(result), as_json=as_json, output=output)
 
 
 @team.command("compare")
@@ -514,19 +527,25 @@ def team_compare(
     left: Annotated[Path, typer.Argument(help="First team JSON")],
     right: Annotated[Path, typer.Argument(help="Second team JSON")],
     objective: Annotated[str, typer.Option(help="Scoring objective")] = "general",
-    seed: Annotated[int, typer.Option()] = 0,
-    turns: Annotated[int, typer.Option(min=1)] = 10,
-    simulations: Annotated[int, typer.Option(min=1)] = 1000,
+    seed: Annotated[int, typer.Option(help="Monte Carlo seed recorded on the report")] = 0,
+    turns: Annotated[int, typer.Option(min=1, help="Simulated turns recorded on the report")] = 10,
+    simulations: Annotated[
+        int, typer.Option(min=1, help="Monte Carlo boards recorded on the report")
+    ] = 1000,
     dungeon: Annotated[
         Path | None,
         typer.Option("--dungeon", help="Dungeon profile. Its mechanics are essential requirements"),
     ] = None,
+    as_json: Annotated[
+        bool, typer.Option("--json", help="Print JSON instead of the text report")
+    ] = False,
 ) -> None:
     """Compare two named teams. Neither team is selected."""
     from pydantic import ValidationError
 
     from padbox.evaluator import Scenario
     from padbox.evaluator.explain import compare_teams
+    from padbox.team_reports import format_comparison
 
     try:
         first = json.loads(left.read_text())
@@ -550,7 +569,12 @@ def team_compare(
         )
     except (ValueError, OSError, json.JSONDecodeError, ValidationError) as exc:
         raise typer.BadParameter(str(exc)) from exc
-    emit(report.model_dump(mode="json"))
+    payload = report.model_dump(mode="json", exclude={"left_report", "right_report"})
+    if report.left_report is not None:
+        payload["left_report"] = report.left_report.model_dump(mode="json")
+    if report.right_report is not None:
+        payload["right_report"] = report.right_report.model_dump(mode="json")
+    _present(payload, format_comparison(report), as_json=as_json, output=None)
 
 
 def _search_payload(result: object) -> dict:
@@ -577,11 +601,15 @@ def _load_dungeon(path: Path | None):
         raise typer.BadParameter(str(exc)) from exc
 
 
-def _write_json(output: Path | None, payload: object) -> None:
+def _present(payload: object, text: str, *, as_json: bool, output: Path | None) -> None:
+    """Write JSON to ``output`` when asked. Stdout is the text report unless ``--json``."""
     if output is not None:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(payload, indent=2) + "\n")
-    emit(payload)
+    if as_json:
+        emit(payload)
+    else:
+        typer.echo(text.rstrip("\n"))
 
 
 @app.command("evaluate")

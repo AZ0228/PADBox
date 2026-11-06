@@ -119,6 +119,8 @@ class TeamComparison(_Strict):
     right_score: int | None
     selected_team: None = None
     note: str
+    left_report: Any = None
+    right_report: Any = None
 
 
 def explain_cards(
@@ -222,6 +224,8 @@ def compare_teams(
         left_score=first.rank.score,
         right_score=second.rank.score,
         note=note,
+        left_report=first,
+        right_report=second,
     )
 
 

@@ -125,8 +125,22 @@ Removing a sub, assist, or helper runs `evaluate_team` again without that card, 
 
 An assist replaces the host active. The explanation records the host minimum cooldown and the assist minimum cooldown. Charge fills the host cooldown before the assist counter. When the assist cooldown is longer, the host active stays unavailable while the assist is equipped. Removing the assist returns the host active in the re-evaluation.
 
-`compare_teams` evaluates two supplied teams under one scenario and lists the measured differences, including skill boost, transform, the five components, and which cards still have unresolved effects. `selected_team` stays null. Comparing two teams does not mark any card as having been compared with an alternative.
+`compare_teams` evaluates two supplied teams under one scenario and lists the measured differences, including skill boost, transform, the five components, and which cards still have unresolved effects. `selected_team` stays null. The two `EvaluationReport` values are kept on the comparison so the text report can print both without evaluating either team again. Comparing two teams does not mark any card as having been compared with an alternative.
 
 ## What a report may claim
 
 A report lists the turns, the simulation count, the seeds, and the assumptions it used. An activation result names this policy (`policy_approximation`). A leader clause is met or missed per turn from the board the policy actually matched. Metrics the simulator did not compute are omitted, and each computed metric lists why its misses happened.
+
+## CLI text report
+
+`padbox team evaluate`, `padbox team optimize`, and `padbox team compare` print a text report. `--json` prints the machine-readable model instead. `--output` on evaluate and optimize still writes that JSON file. `--seed`, `--turns`, and `--simulations` are stored on the report and repeated in the header. The defaults are seed 0, 10 turns, and 1,000 simulations.
+
+The sections are Legality, Activation, Utility, Survivability, Damage, Uncertainty, and Recommendations. A line is filled from a field the run recorded. A metric the simulator did not compute is `not computed`. An unresolved value stays unresolved. Activation lines are policy approximations. Orb supply is `orb_generation_uptime`. Effective HP is the survivability component, which stays unresolved while enemy damage is unmodeled. Healing is `healing_orb_availability`, and the line says recovery sufficiency was not computed. Shield uptime says it is not a separate metric and then quotes `active_effect_uptime`. Damage quotes the unresolved damage component. Unsupported mechanics are the report's unknowns, with effect summaries taken from the decoder. Unverified assumptions are the check's inexact assumptions plus the simulation's assumption list.
+
+`team evaluate` does not name an alternative team. `team compare` leaves the selected team as none. `team optimize` repeats the evaluation for each ranked team, states the objective and search scope, says the result is not a global optimum, and lists each pruned candidate with the reason it was dropped. `padbox evaluate` and `padbox check-team` stay JSON commands.
+
+Timing for this layer on the fixture collection is in `docs/team-optimizer.md`.
+
+## Verification
+
+The simulator tests are `tests/test_evaluator_sim.py`, `tests/test_evaluator_board.py`, and `tests/test_evaluator_metrics.py`. They lock the skill-use policy, the 6×5 greedy match, cross versus five linked orbs, scenario mode, Monte Carlo seeds and intervals, and the milestone that two generator rotations do not share an activation result. `tests/test_evaluator_team.py` locks the hard checks and the recorded ruleset, scenario, seed, and provenance. `tests/test_evaluator_explain.py` locks the Rozé lineup against the earlier lineup, short skill boosts, overlapping clerics, a longer assist cooldown, and Gaia's unresolved evolving skill, without selecting a winner. `tests/test_evaluator_dungeon.py` locks the profile vocabulary and the floor verdicts. `tests/test_team_cli.py` locks the text sections, `--json`, and that `padbox evaluate` and `padbox check-team` still print JSON.
