@@ -24,8 +24,17 @@ Hard checks reuse `check_team` and stay `pass`, `fail`, or `unknown`:
 - Transform requirements, including each transforming member. An unresolved cooldown stays `unknown`. A known miss on another member stays `fail`.
 - Mechanics coverage and each decoder requirement, each with its own result.
 - Each requirement the scenario names. A name the decoder already judged keeps that result. A name this layer does not model stays `unknown`.
+- Each mechanic on a dungeon profile attached to the scenario. The check uses the simulator's response and its timing. See Dungeon profiles below.
 
 `feasibility` is `pass` only when every hard check passes. Any `fail` makes it `fail`, including an incomplete team. `unknown` with no `fail` makes it `unknown`. An unresolved check is not a pass and is not a zero.
+
+## Dungeon profiles
+
+A `DungeonProfile` can be the scenario, or the `dungeon` field on a scenario. Each listed mechanic on each floor becomes an essential requirement named `floor:<n>:<mechanic>`.
+
+The battle times these responses: damage absorb void, attribute absorb void, damage void pierce, awoken bind clear, and unmatchable clear. A requirement is met when every simulation shows that response with known timing at least once. A known miss is `fail`. Skill delay, resolve, enemy shields, and HP thresholds have no response model, so they stay `unknown`.
+
+`report.dungeon` says a floor is handled only when every listed mechanic on it is modeled and met. Enemy HP is not a damage target, and preemptive damage above zero is not applied. Those stay uncertainties. The report does not say the team clears a floor. The profile also does not say which turn the enemy uses a mechanic, so the timing is the team's response across the simulated battle.
 
 Simulation defaults, recorded on every report and overridable by flag:
 

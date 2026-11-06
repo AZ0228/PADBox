@@ -259,7 +259,11 @@ def _damage(metrics: dict[str, Any]) -> ComponentScore:
 
 def _coverage(metrics: dict[str, Any], constraints: list[Any]) -> ComponentScore:
     decoder = [item for item in constraints if str(item.name).startswith("requirement:")]
-    scenario = [item for item in constraints if str(item.name).startswith("scenario:")]
+    scenario = [
+        item
+        for item in constraints
+        if str(item.name).startswith("scenario:") or str(item.name).startswith("floor:")
+    ]
     unknown = [item for item in decoder + scenario if item.result is CheckResult.UNKNOWN]
     passes = sum(item.result is CheckResult.PASS for item in decoder)
     fails = sum(item.result is CheckResult.FAIL for item in decoder)

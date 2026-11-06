@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from padbox.database.store import Store
 from padbox.evaluator import AssistSpec, Scenario, SubSpec, TeamSpec, evaluate_team
+from padbox.evaluator.dungeon import DungeonProfile, answer_keys, unmodeled_mechanics
 from padbox.evaluator.evaluate import EvaluationReport
 from padbox.evaluator.score import OBJECTIVE_ORDER, ObjectiveName
 from padbox.evaluator.sim import DEFAULT_SEED, DEFAULT_SIMULATIONS, DEFAULT_TURNS
@@ -99,6 +100,7 @@ class SearchResult(_Strict):
     beam: list[SearchedTeam]
     ranked: list[SearchedTeam]
     notes: list[str] = Field(default_factory=list)
+    dungeon: DungeonProfile | None = None
 
 
 @dataclass
@@ -124,22 +126,27 @@ def search_teams(
     simulations: int = DEFAULT_SIMULATIONS,
     skill_index: dict | None = None,
     pool: CandidatePool | None = None,
+    dungeon: DungeonProfile | None = None,
 ) -> SearchResult:
     """Search the owned box for complete teams and simulate the retained beam.
 
     Pass ``helper_id`` to require that helper. Otherwise the helper is one of
     the user's own copies. A helper that was not named and is not owned is
-    not considered. ``beam_width`` caps the diverse beam at each sub slot and
-    caps how many teams ``evaluate_team`` sees. The defaults match the
-    evaluator: objective ``general``, seed 0, 10 turns, 1,000 simulations.
+    not considered. ``dungeon`` makes each listed mechanic an essential
+    requirement on the scenario passed to ``evaluate_team``. ``beam_width``
+    caps the diverse beam at each sub slot and caps how many teams
+    ``evaluate_team`` sees. The defaults match the evaluator: objective
+    ``general``, seed 0, 10 turns, 1,000 simulations.
     """
     if beam_width < 1:
         raise ValueError("beam_width must be positive")
-    scenario = Scenario(name=objective, seed=seed, turns=turns, simulations=simulations)
+    scenario = Scenario(
+        name=objective, seed=seed, turns=turns, simulations=simulations, dungeon=dungeon
+    )
     built = pool if pool is not None else generate_candidates(
         store, leader_id, helper_id, skill_index
     )
-    notes: list[str] = []
+    notes = _dungeon_notes(dungeon)
     leader = next((row for row in built.candidates if row.kind == "leader"), None)
     if leader is None:
         notes.append("No owned copy can become this leader.")
@@ -156,7 +163,7 @@ def search_teams(
             "No helper is available. Pass an explicit helper, or own a copy with a leader skill."
         )
         return _empty(leader_id, scenario, beam_width, notes)
-    essential = tuple(built.essential_roles)
+    essential = tuple(dict.fromkeys((*built.essential_roles, *answer_keys(dungeon))))
     transform_turns = built.transform_turns
     opening = _open_helpers(
         leader, helpers, leader_used, after_leader, essential, objective, transform_turns
@@ -199,6 +206,7 @@ def search_teams(
     from padbox.optimizer.report import explain_ranked, order_key
 
     ranked = sorted(beam, key=lambda team: order_key(team, objective))
+    guarantee = _guarantee(dungeon)
     explain_ranked(
         ranked,
         leader_id=leader_id,
@@ -208,7 +216,7 @@ def search_teams(
         simulations=simulations,
         beam_width=beam_width,
         complete_teams_scored=scored,
-        guarantee=_GUARANTEE,
+        guarantee=guarantee,
     )
     return SearchResult(
         leader_id=leader_id,
@@ -217,12 +225,31 @@ def search_teams(
         seed=seed,
         turns=turns,
         simulations=simulations,
-        guarantee=_GUARANTEE,
+        guarantee=guarantee,
         complete_teams_scored=scored,
         beam=beam,
         ranked=ranked,
         notes=notes,
+        dungeon=dungeon,
     )
+
+
+def _guarantee(dungeon: DungeonProfile | None) -> str:
+    if dungeon is None:
+        return _GUARANTEE
+    return (
+        _GUARANTEE + f" Dungeon mechanics on {dungeon.name} are essential requirements. "
+        "A floor is handled only when every listed mechanic is modeled and met. "
+        "Unmodeled mechanics stay uncertainties. This search does not say a team clears a floor."
+    )
+
+
+def _dungeon_notes(dungeon: DungeonProfile | None) -> list[str]:
+    return [
+        f"{name} is unmodeled. It is an uncertainty on the dungeon profile "
+        "and is not a reason to drop a card."
+        for name in unmodeled_mechanics(dungeon)
+    ]
 
 
 def _empty(
@@ -239,11 +266,12 @@ def _empty(
         seed=scenario.seed,
         turns=scenario.turns,
         simulations=scenario.simulations,
-        guarantee=_GUARANTEE,
+        guarantee=_guarantee(scenario.dungeon),
         complete_teams_scored=scored,
         beam=[],
         ranked=[],
         notes=notes,
+        dungeon=scenario.dungeon,
     )
 
 

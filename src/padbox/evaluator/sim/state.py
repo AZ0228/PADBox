@@ -222,6 +222,8 @@ class TurnReport(_Strict):
     bound_members: list[int] = Field(default_factory=list)
     applied_kinds: list[str] = Field(default_factory=list)
     active_effect_kinds: list[str] = Field(default_factory=list)
+    responses: list[str] = Field(default_factory=list)
+    unknown_responses: list[str] = Field(default_factory=list)
 
 
 class GameState(_Strict):

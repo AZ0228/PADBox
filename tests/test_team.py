@@ -1388,27 +1388,45 @@ def test_mechanics_does_not_name_an_optimal_team(tmp_path: Path):
     }
 
 
-def test_team_optimize_refuses_a_dungeon_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_team_optimize_reads_a_dungeon_profile(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """The phase-5 command refused every dungeon file.
+
+    Phase 6 makes a valid profile the search scenario. An empty object is
+    still rejected, because it is not a profile.
+    """
     monkeypatch.setattr("padbox.cli.logging.basicConfig", lambda **kwargs: None)
     from typer.testing import CliRunner
 
     from padbox.cli import app
 
-    dungeon = tmp_path / "dungeon.json"
-    dungeon.write_text("{}")
-    result = CliRunner().invoke(
+    runner = CliRunner()
+    home = tmp_path / "home"
+    invalid = tmp_path / "dungeon.json"
+    invalid.write_text("{}")
+    rejected = runner.invoke(
+        app,
+        ["--home", str(home), "team", "optimize", "--leader", "1", "--dungeon", str(invalid)],
+    )
+    assert rejected.exit_code != 0
+    assert "not read a dungeon profile" not in rejected.output
+    example = Path(__file__).resolve().parent / "fixtures" / "dungeons" / "example.json"
+    loaded = runner.invoke(
         app,
         [
             "--home",
-            str(tmp_path / "home"),
+            str(home),
             "team",
             "optimize",
             "--leader",
             "1",
             "--dungeon",
-            str(dungeon),
+            str(example),
+            "--turns",
+            "1",
+            "--simulations",
+            "1",
         ],
     )
-    assert result.exit_code != 0
-    assert "team optimize" in result.output
-    assert "not read a dungeon profile" in result.output
+    assert loaded.exit_code != 0
+    assert "No applied box" in loaded.output
+    assert "not read a dungeon profile" not in loaded.output

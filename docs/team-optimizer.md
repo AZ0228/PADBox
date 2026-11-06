@@ -111,7 +111,7 @@ An equip that moves a known leader-color sub attribute off every leader color is
 
 `beam_width` must be positive. `turns` and `simulations` must be positive. The scenario on each finalist report stores the objective, seed, turns, and simulations actually used.
 
-`padbox team optimize --leader ID [--helper ID] [--objective NAME]` runs this search. `--beam-width`, `--seed`, `--turns`, and `--simulations` override the table. `--dungeon FILE` is accepted and refused: the file is not read, and the search cannot claim a dungeon clear. `padbox team evaluate --team FILE` scores one supplied team and does not search. `padbox team compare A B` compares two named teams and selects neither. `padbox evaluate` stays the recognition-accuracy command.
+`padbox team optimize --leader ID [--helper ID] [--objective NAME]` runs this search. `--beam-width`, `--seed`, `--turns`, and `--simulations` override the table. `--dungeon FILE` loads a versioned dungeon profile and passes it as the scenario to each finalist's `evaluate_team`. Every listed mechanic is an essential requirement. A floor is handled only when every one of those requirements is modeled and met. Unmodeled mechanics are uncertainties, not reasons to drop a card. The search does not say a team clears a floor. `padbox team evaluate --team FILE` scores one supplied team and does not search. `padbox team compare A B` compares two named teams and selects neither. `padbox evaluate` stays the recognition-accuracy command.
 
 ## What this search cannot guarantee
 
@@ -121,5 +121,5 @@ An equip that moves a known leader-color sub attribute off every leader color is
 - An unverified effect stays uncertainty. The search does not treat it as a miss, and it does not treat it as a covered mechanic.
 - The assist step is a hill-climb over the beam, not every equip permutation. An equip the score does not raise is left off, including a pair that would help only together when neither equip raises the score alone. Skill boost and backup pressure are on the score so a second charge that only matters after the first still gets a chance.
 - The timing plan is not the Monte Carlo cast list. It does not apply a haste amount. A transforming card is scored with the fielded form's skill boost; `evaluate_team` counts the pre-transform entry for that card. A transforming sub's own cooldown is not inside `transform_turns` unless it was already the pool's recorded cooldown.
-- A dungeon clear is outside this search. No enemy mechanic is marked handled from this beam alone.
+- A dungeon profile does not make this search a clear. A finalist handles a floor only when that team's evaluation shows every listed mechanic modeled and met. Unmodeled mechanics, enemy HP, and preemptive damage stay uncertainties. Teams the beam dropped were not checked against the dungeon.
 - Two copies of one monster may both be subs. One copy may not fill two roles. Evolution materials are spent from the same box counts, one lineup at a time.

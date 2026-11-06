@@ -16,6 +16,13 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from padbox.database.store import Store
+from padbox.evaluator.dungeon import (
+    DungeonProfile,
+    DungeonVerdict,
+    judge_dungeon,
+    response_keys,
+    score_labels,
+)
 from padbox.evaluator.explain import CardExplanation
 from padbox.evaluator.score import (
     ComponentScore,
@@ -86,6 +93,8 @@ class Scenario(_Strict):
     """The stated objective and the simulation settings recorded with the run.
 
     Naming a requirement does not make an unmodeled mechanic pass or fail.
+    ``dungeon`` makes each listed mechanic an essential requirement. An
+    unmodeled dungeon mechanic stays unknown.
     """
 
     name: ObjectiveName = "general"
@@ -93,6 +102,7 @@ class Scenario(_Strict):
     turns: int = DEFAULT_TURNS
     simulations: int = DEFAULT_SIMULATIONS
     requirements: list[str] = Field(default_factory=list)
+    dungeon: DungeonProfile | None = None
 
     @model_validator(mode="after")
     def _positive_counts(self) -> "Scenario":
@@ -159,12 +169,13 @@ class EvaluationReport(_Strict):
     components: list[ComponentScore]
     rank: RankResult
     simulation: SimulationReport | None = None
+    dungeon: DungeonVerdict | None = None
     cards: list[CardExplanation] = Field(default_factory=list)
 
 
 def evaluate_team(
     team: TeamSpec | Mapping[str, Any],
-    scenario: Scenario | Mapping[str, Any] | None = None,
+    scenario: Scenario | DungeonProfile | Mapping[str, Any] | None = None,
     ruleset: Ruleset | Mapping[str, Any] | None = None,
     *,
     store: Store,
@@ -175,10 +186,12 @@ def evaluate_team(
     """Judge one supplied team, simulate it, and score the recorded metrics.
 
     ``store`` is keyword-only: the team spec does not contain the box or the
-    reference snapshot. Unknown requirements stay ``unknown``. When
-    ``explain`` is true, each fielded card is described and then removed and
-    evaluated again under this same scenario. ``_omit_leader`` is the leader
-    removal: the battle drops that card and no other leader is substituted.
+    reference snapshot. Unknown requirements stay ``unknown``. A dungeon
+    profile on the scenario makes each listed mechanic essential. The floor
+    is handled only when every one of those requirements is modeled and met.
+    When ``explain`` is true, each fielded card is described and then removed
+    and evaluated again under this same scenario. ``_omit_leader`` is the
+    leader removal: the battle drops that card and no other leader is substituted.
     """
     spec = team if isinstance(team, TeamSpec) else TeamSpec.model_validate(team)
     stated = _scenario(scenario)
@@ -195,7 +208,6 @@ def evaluate_team(
             )
         )
     by_name = {item.name: item for item in constraints}
-    feasibility = combine_checks(item.result for item in constraints)
     board_supported = by_name["board"].result is CheckResult.PASS
     simulation, slots, prior, note = _simulate(
         store,
@@ -206,6 +218,10 @@ def evaluate_team(
         board_supported,
         omit_leader=_omit_leader,
     )
+    verdict = _dungeon_verdict(stated, simulation)
+    if verdict is not None:
+        constraints.extend(_floor_checks(verdict))
+    feasibility = combine_checks(item.result for item in constraints)
     quality = score_team(
         stated.name,
         feasibility,
@@ -213,7 +229,7 @@ def evaluate_team(
         simulation.metrics if simulation is not None else None,
         slots,
         prior,
-        stated.requirements,
+        [*stated.requirements, *score_labels(stated.dungeon)],
         simulation_note=note,
     )
     report = EvaluationReport(
@@ -233,11 +249,12 @@ def evaluate_team(
         mechanics_coverage=CheckResult(validation["mechanics_coverage"]),
         board_supported=board_supported,
         constraints=constraints,
-        unknowns=_unknown_lines(constraints, validation),
+        unknowns=_dungeon_unknowns(_unknown_lines(constraints, validation), verdict),
         validation=validation,
         components=quality.components,
         rank=quality.rank,
         simulation=simulation,
+        dungeon=verdict,
     )
     if not explain:
         return report
@@ -252,12 +269,59 @@ def evaluate_team(
     )
 
 
-def _scenario(value: Scenario | Mapping[str, Any] | None) -> Scenario:
+def _scenario(value: Scenario | DungeonProfile | Mapping[str, Any] | None) -> Scenario:
     if value is None:
         return Scenario()
     if isinstance(value, Scenario):
         return value
+    if isinstance(value, DungeonProfile):
+        return Scenario(dungeon=value)
+    if isinstance(value, Mapping) and "floors" in value and "seed" not in value:
+        return Scenario(dungeon=DungeonProfile.model_validate(value))
     return Scenario.model_validate(value)
+
+
+def _dungeon_verdict(
+    scenario: Scenario, simulation: SimulationReport | None
+) -> DungeonVerdict | None:
+    if scenario.dungeon is None:
+        return None
+    return judge_dungeon(scenario.dungeon, _timing_map(simulation))
+
+
+def _timing_map(
+    simulation: SimulationReport | None,
+) -> dict[str, tuple[int, int, int]] | None:
+    if simulation is None:
+        return None
+    return {
+        row.response: (row.simulations, row.simulations_met, row.simulations_unknown)
+        for row in simulation.response_timing
+    }
+
+
+def _floor_checks(verdict: DungeonVerdict) -> list[ConstraintCheck]:
+    checks = []
+    for floor in verdict.floors:
+        for requirement in floor.requirements:
+            checks.append(
+                ConstraintCheck(
+                    name=f"floor:{requirement.floor}:{requirement.mechanic}",
+                    result=requirement.result,
+                    detail=requirement.detail,
+                )
+            )
+    return checks
+
+
+def _dungeon_unknowns(lines: list[str], verdict: DungeonVerdict | None) -> list[str]:
+    if verdict is None:
+        return lines
+    merged = list(lines)
+    for line in verdict.uncertainties:
+        if line not in merged:
+            merged.append(line)
+    return merged
 
 
 def _ruleset(value: Ruleset | Mapping[str, Any] | None) -> Ruleset:
@@ -557,9 +621,13 @@ def _simulate(
         return None, [], [], "A fielded card is not in the local reference set."
     members, skills, cards, slots, prior = roster
     colors = [] if omit_leader else _leader_colors(cards[spec.leader_id], skills)
+    mechanics = policy_mechanics(scenario.requirements)
+    for key in response_keys(scenario.dungeon):
+        if key not in mechanics:
+            mechanics.append(key)
     target = PolicyTarget(
         colors=colors,
-        mechanics=policy_mechanics(scenario.requirements),
+        mechanics=mechanics,
     )
     report = run_monte_carlo(
         members,

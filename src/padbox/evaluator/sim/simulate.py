@@ -80,6 +80,15 @@ class Metric(_Strict):
     notes: list[str] = Field(default_factory=list)
 
 
+class ResponseTiming(_Strict):
+    """How many simulations showed one response with known timing."""
+
+    response: str
+    simulations: int
+    simulations_met: int
+    simulations_unknown: int
+
+
 class SimulationReport(_Strict):
     """The recorded run. Metrics the simulator did not compute are absent."""
 
@@ -91,6 +100,7 @@ class SimulationReport(_Strict):
     assumptions: list[str]
     basis: Literal["policy_approximation"]
     metrics: list[Metric]
+    response_timing: list[ResponseTiming] = Field(default_factory=list)
 
 
 class _Rates:
@@ -244,6 +254,43 @@ def report_battles(
         assumptions=assumptions,
         basis="policy_approximation",
         metrics=[metric for metric in metrics if metric is not None],
+        response_timing=_response_timing(states, list(needs.mechanics)),
+    )
+
+
+def _response_timing(states: list[GameState], keys: list[str]) -> list[ResponseTiming]:
+    rows: list[ResponseTiming] = []
+    for key in keys:
+        met = 0
+        unknown = 0
+        for state in states:
+            saw = False
+            unclear = False
+            for report in state.turn_reports:
+                if _turn_has(report, key):
+                    saw = True
+                elif key in report.unknown_responses:
+                    unclear = True
+            if saw:
+                met += 1
+            elif unclear:
+                unknown += 1
+        rows.append(
+            ResponseTiming(
+                response=key,
+                simulations=len(states),
+                simulations_met=met,
+                simulations_unknown=unknown,
+            )
+        )
+    return rows
+
+
+def _turn_has(report: TurnReport, key: str) -> bool:
+    return (
+        key in report.responses
+        or key in report.applied_kinds
+        or key in report.active_effect_kinds
     )
 
 
@@ -298,7 +345,9 @@ def _battle_rates(state: GameState, target: PolicyTarget, rates: _Rates) -> None
         )
         if def_outcome != "met":
             defense_reasons.extend(def_reasons)
-        kinds = set(report.applied_kinds) | set(report.active_effect_kinds)
+        kinds = (
+            set(report.applied_kinds) | set(report.active_effect_kinds) | set(report.responses)
+        )
         gen_t += 1
         if kinds & _GENERATORS:
             gen_s += 1

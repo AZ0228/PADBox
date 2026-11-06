@@ -61,13 +61,23 @@ def _answers(effects: list[Effect], target: PolicyTarget) -> bool:
     for effect in effects:
         if effect.evidence != "verified":
             continue
-        if effect.kind in needed:
+        if effect.kind in needed or _absorb_response(effect, needed):
             return True
         if target.recovery and (effect.kind in _HEAL_KINDS or "heal" in _colors(effect)):
             return True
         if colors and colors.intersection(_colors(effect)):
             return True
     return False
+
+
+def _absorb_response(effect: Effect, needed: set[str]) -> bool:
+    """True when a typed absorb void is one of the scenario's response keys."""
+    if effect.kind != "absorb_void":
+        return False
+    kinds = effect.details.get("kinds")
+    if not isinstance(kinds, list):
+        return False
+    return any(f"absorb_void:{name}" in needed for name in kinds)
 
 
 def _colors(effect: Effect) -> set[str]:

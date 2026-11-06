@@ -199,6 +199,7 @@ def step(
     report.active_effect_kinds = [
         effect.kind for effect in state.effects if not effect.unknown_duration
     ]
+    report.responses, report.unknown_responses = _response_observations(state)
     state.turn_reports.append(report)
     state.leader_verdicts = report.leader_verdicts
     state.helper_verdicts = report.helper_verdicts
@@ -219,6 +220,30 @@ def run(state: GameState, turns: int, target: PolicyTarget | None = None) -> Gam
     for _ in range(turns):
         step(state, target)
     return state
+
+
+def _response_observations(state: GameState) -> tuple[list[str], list[str]]:
+    """Known-timing response keys, then keys whose duration is unknown."""
+    known: list[str] = []
+    unknown: list[str] = []
+    for effect in state.effects:
+        keys = _effect_responses(effect)
+        target = unknown if effect.unknown_duration else known
+        for key in keys:
+            if key not in target:
+                target.append(key)
+    for kind in state._applied:
+        if kind in {"awoken_bind_clear", "unmatchable_clear"} and kind not in known:
+            known.append(kind)
+    return known, unknown
+
+
+def _effect_responses(effect: TimedEffect) -> list[str]:
+    if effect.kind == "absorb_void":
+        return [f"absorb_void:{name}" for name in effect.absorb_kinds]
+    if effect.kind == "void_pierce":
+        return ["void_pierce"]
+    return []
 
 
 def apply_skill_delay(state: GameState, turns: int) -> None:

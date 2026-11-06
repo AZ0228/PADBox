@@ -9,6 +9,8 @@ import json
 from contextlib import closing
 
 from padbox.database.store import Store
+from padbox.evaluator.dungeon import DungeonProfile
+from padbox.mechanics.result import CheckResult
 from padbox.optimizer import DEFAULT_BEAM_WIDTH, search_teams
 
 ROZE = 13967
@@ -97,6 +99,48 @@ def test_search_simulates_only_the_diverse_beam(regression_store):
         (team.helper.form_id, [(sub.owned_id, sub.form_id) for sub in team.subs])
         for team in result.ranked
     ]
+
+
+def test_a_dungeon_profile_is_the_search_scenario(regression_store):
+    ids = [13966, 13967, 7844, 8336, 10756, 7949, 7095, 7096, 4834, 4206, 3939, 3821, 7712]
+    _box(regression_store, [(monster_id, 1) for monster_id in ids])
+    profile = DungeonProfile.model_validate(
+        {
+            "name": "Example Dungeon",
+            "floors": [
+                {
+                    "enemy_hp": 100,
+                    "preemptive_damage": 10,
+                    "mechanics": ["damage_absorb", "resolve"],
+                }
+            ],
+        }
+    )
+    result = search_teams(
+        regression_store,
+        ROZE,
+        helper_id=PALADIN,
+        dungeon=profile,
+        beam_width=1,
+        seed=0,
+        turns=1,
+        simulations=1,
+    )
+    assert result.dungeon == profile
+    assert any("resolve is unmodeled" in note for note in result.notes)
+    assert "not a reason to drop a card" in " ".join(result.notes)
+    assert "does not say a team clears a floor" in result.guarantee
+    assert result.ranked, result.notes
+    for team in result.ranked:
+        assert team.evaluation is not None
+        assert team.evaluation.scenario.dungeon == profile
+        floor = team.evaluation.dungeon.floors[0]
+        by_name = {item.mechanic: item for item in floor.requirements}
+        assert by_name["resolve"].modeled is False
+        assert by_name["resolve"].result is CheckResult.UNKNOWN
+        assert by_name["damage_absorb"].modeled is True
+        assert floor.handled is False
+        assert any("not cleared" in line for line in floor.uncertainties)
 
 
 def test_explicit_helper_is_marked_supplied_even_when_unowned(regression_store):

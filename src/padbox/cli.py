@@ -442,6 +442,10 @@ def team_evaluate(
     seed: Annotated[int, typer.Option(help="Monte Carlo seed")] = 0,
     turns: Annotated[int, typer.Option(min=1)] = 10,
     simulations: Annotated[int, typer.Option(min=1)] = 1000,
+    dungeon: Annotated[
+        Path | None,
+        typer.Option("--dungeon", help="Dungeon profile. Its mechanics are essential requirements"),
+    ] = None,
     output: Annotated[Path | None, typer.Option(help="Write the report JSON")] = None,
 ) -> None:
     """Score one supplied team. This does not search."""
@@ -458,6 +462,7 @@ def team_evaluate(
             seed=seed,
             turns=turns,
             simulations=simulations,
+            dungeon=_load_dungeon(dungeon),
         )
         report = evaluate_team(payload, scenario, store=ctx.obj)
     except (ValueError, OSError, json.JSONDecodeError, ValidationError) as exc:
@@ -472,7 +477,7 @@ def team_optimize(
     helper: Annotated[int | None, typer.Option("--helper", help="Explicit helper id")] = None,
     dungeon: Annotated[
         Path | None,
-        typer.Option("--dungeon", help="Not applied. A dungeon file does not change this search"),
+        typer.Option("--dungeon", help="Dungeon profile. Its mechanics are essential requirements"),
     ] = None,
     objective: Annotated[str, typer.Option(help="Scoring objective")] = "general",
     beam_width: Annotated[int, typer.Option(min=1)] = 200,
@@ -486,11 +491,6 @@ def team_optimize(
 
     from padbox.optimizer import search_teams
 
-    if dungeon is not None:
-        raise typer.BadParameter(
-            f"{dungeon} was not applied. team optimize does not read a dungeon profile, "
-            "and this search cannot claim a dungeon clear."
-        )
     try:
         result = search_teams(
             ctx.obj,
@@ -501,6 +501,7 @@ def team_optimize(
             seed=seed,
             turns=turns,
             simulations=simulations,
+            dungeon=_load_dungeon(dungeon),
         )
     except (ValueError, ValidationError) as exc:
         raise typer.BadParameter(str(exc)) from exc
@@ -516,6 +517,10 @@ def team_compare(
     seed: Annotated[int, typer.Option()] = 0,
     turns: Annotated[int, typer.Option(min=1)] = 10,
     simulations: Annotated[int, typer.Option(min=1)] = 1000,
+    dungeon: Annotated[
+        Path | None,
+        typer.Option("--dungeon", help="Dungeon profile. Its mechanics are essential requirements"),
+    ] = None,
 ) -> None:
     """Compare two named teams. Neither team is selected."""
     from pydantic import ValidationError
@@ -533,6 +538,7 @@ def team_compare(
             seed=seed,
             turns=turns,
             simulations=simulations,
+            dungeon=_load_dungeon(dungeon),
         )
         report = compare_teams(
             first,
@@ -555,6 +561,20 @@ def _search_payload(result: object) -> dict:
             report = team.report
             row["report"] = None if report is None else report.model_dump(mode="json")
     return payload
+
+
+def _load_dungeon(path: Path | None):
+    """Read a dungeon profile. An omitted path stays an ordinary scenario."""
+    if path is None:
+        return None
+    from pydantic import ValidationError
+
+    from padbox.evaluator.dungeon import load_dungeon_profile
+
+    try:
+        return load_dungeon_profile(path)
+    except (OSError, ValidationError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 def _write_json(output: Path | None, payload: object) -> None:
