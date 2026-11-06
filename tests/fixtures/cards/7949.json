@@ -1,0 +1,259 @@
+{
+  "snapshot_commit": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+  "monster_id": 7949,
+  "name": "Paladin",
+  "provenance": {
+    "source": "PADDashFormation/NA",
+    "version": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+    "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8/monsters-info/mon_en.json",
+    "fetched_at": "2026-11-05T23:59:50.549212+00:00",
+    "updated_at": "2026-10-30T12:00:38.631000+00:00",
+    "sha256": "e3aaa7a7a3f34080ee40756cfd85ed3bb3956418f452cb674915a5749254605a",
+    "usage": "Upstream code GPL-3.0; game art/metadata third-party; local cache only"
+  },
+  "skill_index": {
+    "file": "monsters-info/skill_en.json",
+    "sha256": "b100979ea3ab7931239fcc8da0b5a525111283468b9b2a14e87c4a4ee9214113"
+  },
+  "card": {
+    "id": 7949,
+    "name": "Paladin",
+    "attrs": [
+      3,
+      1,
+      3
+    ],
+    "types": [
+      2,
+      6,
+      5
+    ],
+    "isUltEvo": false,
+    "rarity": 8,
+    "cost": 40,
+    "maxLevel": 99,
+    "feedExp": 7200,
+    "isEmpty": false,
+    "sellPrice": 7500,
+    "hp": {
+      "min": 1021,
+      "max": 10664,
+      "scale": 1
+    },
+    "atk": {
+      "min": 998,
+      "max": 19865,
+      "scale": 1
+    },
+    "rcv": {
+      "min": 0,
+      "max": 50,
+      "scale": 1
+    },
+    "exp": {
+      "min": 0,
+      "max": 4000000,
+      "scale": 2.5
+    },
+    "activeSkillId": 24544,
+    "leaderSkillId": 24548,
+    "evoBaseId": 0,
+    "evoMaterials": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "unevoMaterials": [
+      155,
+      156,
+      157,
+      158,
+      159
+    ],
+    "awakenings": [
+      52,
+      53,
+      53,
+      28,
+      8,
+      124,
+      111,
+      111,
+      126
+    ],
+    "superAwakenings": [],
+    "evoRootId": 7949,
+    "seriesId": 111,
+    "sellMP": 15000,
+    "latentAwakeningId": 0,
+    "collabId": 1,
+    "flags": 34,
+    "canAssist": false,
+    "enabled": true,
+    "stackable": false,
+    "is8Latent": true,
+    "skillBanner": false,
+    "altName": [
+      "GungHo",
+      "Ragnarok Origin"
+    ],
+    "limitBreakIncr": 0,
+    "voiceId": 0,
+    "orbSkinOrBgmId": 88,
+    "specialAttribute": "",
+    "searchFlags": [
+      73400388,
+      0
+    ],
+    "gachaGroupsFlag": 0,
+    "badgeId": 0,
+    "syncAwakening": 138,
+    "syncAwakeningConditions": [
+      {
+        "id": 1317,
+        "level": 120,
+        "skillLevel": 7
+      }
+    ],
+    "henshinFrom": [
+      7948
+    ],
+    "otLangName": {
+      "ja": "パラディン",
+      "cht": "聖殿十字軍",
+      "chs": "圣殿十字军",
+      "ko": "팔라딘"
+    },
+    "otTags": [
+      "ガンホー",
+      "ラグナロクオリジン",
+      "「GungHo」合作活動",
+      "「仙境傳說」合作活動",
+      "「GungHo」合作活动",
+      "「仙境传说」合作活动",
+      "겅호",
+      "라그나로크 오리진"
+    ]
+  },
+  "skills": [
+    {
+      "id": 130,
+      "name": "",
+      "description": "",
+      "type": 172,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": []
+    },
+    {
+      "id": 24544,
+      "name": "Sacrifice",
+      "description": "Halves HP; removes {locks} ; voids Att. absorption & damage\nabsorption and pierce enemies' damage void for 1 turn",
+      "type": 116,
+      "maxLevel": 1,
+      "initialCooldown": 2,
+      "unk": "",
+      "params": [
+        24545,
+        130,
+        28867,
+        24546
+      ]
+    },
+    {
+      "id": 24545,
+      "name": "",
+      "description": "",
+      "type": 195,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        50
+      ]
+    },
+    {
+      "id": 24546,
+      "name": "",
+      "description": "",
+      "type": 191,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        1
+      ]
+    },
+    {
+      "id": 24548,
+      "name": "3rd Class: Paladin",
+      "description": "150x ATK, reduces dmg by 83% & +3 combos with a cross of\n5 Heal Orbs; inflicts 30,000,000 damage with 10+ combos",
+      "type": 138,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        24549,
+        24550,
+        28868
+      ]
+    },
+    {
+      "id": 24549,
+      "name": "",
+      "description": "",
+      "type": 151,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        15000,
+        0,
+        83
+      ]
+    },
+    {
+      "id": 24550,
+      "name": "",
+      "description": "",
+      "type": 209,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        3
+      ]
+    },
+    {
+      "id": 28867,
+      "name": "",
+      "description": "",
+      "type": 173,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        1,
+        1,
+        0,
+        1
+      ]
+    },
+    {
+      "id": 28868,
+      "name": "",
+      "description": "",
+      "type": 223,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        10,
+        30000000
+      ]
+    }
+  ]
+}

@@ -1,0 +1,254 @@
+{
+  "snapshot_commit": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+  "monster_id": 3939,
+  "name": "Sword Barrier Dragon Caller, Rathios",
+  "provenance": {
+    "source": "PADDashFormation/NA",
+    "version": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+    "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8/monsters-info/mon_en.json",
+    "fetched_at": "2026-11-05T23:59:50.549212+00:00",
+    "updated_at": "2026-10-30T12:00:38.631000+00:00",
+    "sha256": "e3aaa7a7a3f34080ee40756cfd85ed3bb3956418f452cb674915a5749254605a",
+    "usage": "Upstream code GPL-3.0; game art/metadata third-party; local cache only"
+  },
+  "skill_index": {
+    "file": "monsters-info/skill_en.json",
+    "sha256": "b100979ea3ab7931239fcc8da0b5a525111283468b9b2a14e87c4a4ee9214113"
+  },
+  "card": {
+    "id": 3939,
+    "name": "Sword Barrier Dragon Caller, Rathios",
+    "attrs": [
+      3,
+      0,
+      3
+    ],
+    "types": [
+      4,
+      2
+    ],
+    "isUltEvo": true,
+    "rarity": 6,
+    "cost": 60,
+    "maxLevel": 99,
+    "feedExp": 9900,
+    "isEmpty": false,
+    "sellPrice": 10200,
+    "hp": {
+      "min": 1,
+      "max": 5504,
+      "scale": 1
+    },
+    "atk": {
+      "min": 1,
+      "max": 1589,
+      "scale": 1
+    },
+    "rcv": {
+      "min": 0,
+      "max": 101,
+      "scale": 1
+    },
+    "exp": {
+      "min": 0,
+      "max": 5000000,
+      "scale": 2.5
+    },
+    "activeSkillId": 9065,
+    "leaderSkillId": 9068,
+    "evoBaseId": 3938,
+    "evoMaterials": [
+      321,
+      150,
+      227,
+      249,
+      246
+    ],
+    "unevoMaterials": [
+      155,
+      156,
+      157,
+      158,
+      159
+    ],
+    "awakenings": [
+      56,
+      56,
+      56,
+      28,
+      131,
+      109,
+      109,
+      82,
+      52
+    ],
+    "superAwakenings": [
+      109,
+      76,
+      56,
+      82,
+      142
+    ],
+    "evoRootId": 3938,
+    "seriesId": 54,
+    "sellMP": 15000,
+    "latentAwakeningId": 0,
+    "collabId": 10001,
+    "flags": 35,
+    "canAssist": true,
+    "enabled": true,
+    "stackable": false,
+    "is8Latent": true,
+    "skillBanner": false,
+    "altName": [
+      "Dragonbound & Dragon Callers"
+    ],
+    "limitBreakIncr": 88,
+    "voiceId": 0,
+    "orbSkinOrBgmId": 0,
+    "specialAttribute": "",
+    "searchFlags": [
+      33793,
+      0
+    ],
+    "gachaGroupsFlag": 256,
+    "badgeId": 0,
+    "otLangName": {
+      "ja": "剣壁の衛龍喚士・ラシオス",
+      "cht": "劍壁的衛龍喚士・拉斯昂絲",
+      "chs": "剑壁的卫龙唤士・拉斯昂丝",
+      "ko": "검벽의 위용환사 라시오스"
+    },
+    "otTags": [
+      "龍契士＆龍喚士",
+      "りゅうけいしりゅうかんし",
+      "衛龍喚士・ラシオス",
+      "「龍契士＆龍喚士」系列活動",
+      "龍喚士",
+      "龙契士＆龙唤士",
+      "龙唤士",
+      "용계사&용환사"
+    ]
+  },
+  "skills": [
+    {
+      "id": 9065,
+      "name": "Solblade Guard",
+      "description": "2x ATK & dmg cap to 18 bln for all subs and halves dmg for\n3 turns; changes leftmost column to {Light} & rightmost to {Fire}",
+      "type": 116,
+      "maxLevel": 9,
+      "initialCooldown": 17,
+      "unk": "",
+      "params": [
+        9066,
+        27423,
+        9152,
+        9067
+      ]
+    },
+    {
+      "id": 9066,
+      "name": "",
+      "description": "",
+      "type": 3,
+      "maxLevel": 6,
+      "initialCooldown": 10,
+      "unk": "",
+      "params": [
+        3,
+        50
+      ]
+    },
+    {
+      "id": 9067,
+      "name": "",
+      "description": "",
+      "type": 127,
+      "maxLevel": 6,
+      "initialCooldown": 10,
+      "unk": "",
+      "params": [
+        1,
+        8,
+        32,
+        1
+      ]
+    },
+    {
+      "id": 9068,
+      "name": "Cataphract's Draco Summoning Seal",
+      "description": "^ff3600^[Move time: 8 sec]^p; 7x ATK when Light & Fire\nattack at once; 2.5x ATK & RCV for {Dragon}{Physical}",
+      "type": 138,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        9069,
+        9070
+      ]
+    },
+    {
+      "id": 9069,
+      "name": "",
+      "description": "",
+      "type": 178,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        0,
+        20,
+        0,
+        250,
+        250
+      ]
+    },
+    {
+      "id": 9070,
+      "name": "",
+      "description": "",
+      "type": 124,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        1,
+        0,
+        0,
+        0,
+        2,
+        700
+      ]
+    },
+    {
+      "id": 9152,
+      "name": "",
+      "description": "",
+      "type": 258,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        3,
+        180,
+        8
+      ]
+    },
+    {
+      "id": 27423,
+      "name": "",
+      "description": "",
+      "type": 230,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        3,
+        8,
+        200
+      ]
+    }
+  ]
+}

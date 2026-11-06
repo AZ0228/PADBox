@@ -1,0 +1,234 @@
+{
+  "snapshot_commit": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+  "monster_id": 7095,
+  "name": "Saintly Wise Queen, Saphira",
+  "provenance": {
+    "source": "PADDashFormation/NA",
+    "version": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+    "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8/monsters-info/mon_en.json",
+    "fetched_at": "2026-11-05T23:59:50.549212+00:00",
+    "updated_at": "2026-10-30T12:00:38.631000+00:00",
+    "sha256": "e3aaa7a7a3f34080ee40756cfd85ed3bb3956418f452cb674915a5749254605a",
+    "usage": "Upstream code GPL-3.0; game art/metadata third-party; local cache only"
+  },
+  "skill_index": {
+    "file": "monsters-info/skill_en.json",
+    "sha256": "b100979ea3ab7931239fcc8da0b5a525111283468b9b2a14e87c4a4ee9214113"
+  },
+  "card": {
+    "id": 7095,
+    "name": "Saintly Wise Queen, Saphira",
+    "attrs": [
+      3,
+      4
+    ],
+    "types": [
+      6,
+      5
+    ],
+    "isUltEvo": false,
+    "rarity": 7,
+    "cost": 35,
+    "maxLevel": 99,
+    "feedExp": 6300,
+    "isEmpty": false,
+    "sellPrice": 6600,
+    "hp": {
+      "min": 652,
+      "max": 3451,
+      "scale": 1
+    },
+    "atk": {
+      "min": 145,
+      "max": 2556,
+      "scale": 1
+    },
+    "rcv": {
+      "min": 21,
+      "max": 45,
+      "scale": 1
+    },
+    "exp": {
+      "min": 0,
+      "max": 5000000,
+      "scale": 2.5
+    },
+    "activeSkillId": 21111,
+    "leaderSkillId": 21114,
+    "evoBaseId": 0,
+    "evoMaterials": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "unevoMaterials": [
+      155,
+      156,
+      157,
+      158,
+      159
+    ],
+    "awakenings": [
+      52,
+      28,
+      109,
+      21,
+      21,
+      21
+    ],
+    "superAwakenings": [],
+    "evoRootId": 7095,
+    "seriesId": 100,
+    "sellMP": 75000,
+    "latentAwakeningId": 0,
+    "collabId": 0,
+    "flags": 34,
+    "canAssist": false,
+    "enabled": true,
+    "stackable": false,
+    "is8Latent": true,
+    "skillBanner": false,
+    "altName": [
+      "Fest Exclusive",
+      "Royal"
+    ],
+    "limitBreakIncr": 0,
+    "voiceId": 0,
+    "orbSkinOrBgmId": 0,
+    "specialAttribute": "",
+    "searchFlags": [
+      16777730,
+      0
+    ],
+    "gachaGroupsFlag": 0,
+    "badgeId": 0,
+    "syncAwakening": 59,
+    "syncAwakeningConditions": [
+      {
+        "id": 5173,
+        "level": 120,
+        "skillLevel": 33
+      },
+      {
+        "id": 1463,
+        "level": 120,
+        "skillLevel": 14
+      }
+    ],
+    "henshinTo": [
+      7096
+    ],
+    "otLangName": {
+      "ja": "聖賢王・サフィーラ",
+      "cht": "聖賢王・莎菲拉",
+      "chs": "圣贤王・莎菲拉",
+      "ko": "성현왕 사피라"
+    },
+    "otTags": [
+      "フェス限定",
+      "ふぇすげんてい",
+      "王シリーズ",
+      "FES限定寵物",
+      "「王」系列",
+      "神UP限定宠物",
+      "페스티벌 한정",
+      "왕 시리즈"
+    ]
+  },
+  "skills": [
+    {
+      "id": 130,
+      "name": "",
+      "description": "",
+      "type": 172,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": []
+    },
+    {
+      "id": 21111,
+      "name": "Cryptic Riddle",
+      "description": "Removes {locks}, creates 10 {Light}{Dark}{Heal} each;\nchanges to final form",
+      "type": 116,
+      "maxLevel": 1,
+      "initialCooldown": 28,
+      "unk": "",
+      "params": [
+        130,
+        21112,
+        21113
+      ]
+    },
+    {
+      "id": 21112,
+      "name": "",
+      "description": "",
+      "type": 141,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        10,
+        56
+      ]
+    },
+    {
+      "id": 21113,
+      "name": "",
+      "description": "",
+      "type": 202,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        7096
+      ]
+    },
+    {
+      "id": 21114,
+      "name": "Intense Challenge",
+      "description": "Reduces damage with 6+ linked Light Orbs;\n2x HP & 16x ATK for Light Att.",
+      "type": 138,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        21115,
+        21116
+      ]
+    },
+    {
+      "id": 21115,
+      "name": "",
+      "description": "",
+      "type": 129,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        0,
+        200,
+        1600
+      ]
+    },
+    {
+      "id": 21116,
+      "name": "",
+      "description": "",
+      "type": 182,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        6,
+        100,
+        35
+      ]
+    }
+  ]
+}

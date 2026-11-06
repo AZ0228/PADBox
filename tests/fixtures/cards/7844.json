@@ -1,0 +1,290 @@
+{
+  "snapshot_commit": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+  "monster_id": 7844,
+  "name": "Super Reincarnated Apollo",
+  "provenance": {
+    "source": "PADDashFormation/NA",
+    "version": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+    "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8/monsters-info/mon_en.json",
+    "fetched_at": "2026-11-05T23:59:50.549212+00:00",
+    "updated_at": "2026-10-30T12:00:38.631000+00:00",
+    "sha256": "e3aaa7a7a3f34080ee40756cfd85ed3bb3956418f452cb674915a5749254605a",
+    "usage": "Upstream code GPL-3.0; game art/metadata third-party; local cache only"
+  },
+  "skill_index": {
+    "file": "monsters-info/skill_en.json",
+    "sha256": "b100979ea3ab7931239fcc8da0b5a525111283468b9b2a14e87c4a4ee9214113"
+  },
+  "card": {
+    "id": 7844,
+    "name": "Super Reincarnated Apollo",
+    "attrs": [
+      3,
+      0,
+      3
+    ],
+    "types": [
+      5,
+      6,
+      2
+    ],
+    "isUltEvo": false,
+    "rarity": 6,
+    "cost": 25,
+    "maxLevel": 99,
+    "feedExp": 9600,
+    "isEmpty": false,
+    "sellPrice": 9900,
+    "hp": {
+      "min": 1379,
+      "max": 4657,
+      "scale": 1
+    },
+    "atk": {
+      "min": 927,
+      "max": 2943,
+      "scale": 1
+    },
+    "rcv": {
+      "min": 258,
+      "max": 438,
+      "scale": 1
+    },
+    "exp": {
+      "min": 0,
+      "max": 50000000,
+      "scale": 2.5
+    },
+    "activeSkillId": 3924,
+    "leaderSkillId": 24300,
+    "evoBaseId": 3495,
+    "evoMaterials": [
+      5077,
+      5320,
+      1328,
+      3971,
+      3795
+    ],
+    "unevoMaterials": [
+      155,
+      156,
+      157,
+      158,
+      159
+    ],
+    "awakenings": [
+      52,
+      56,
+      28,
+      28,
+      53,
+      69,
+      109,
+      109,
+      124
+    ],
+    "superAwakenings": [
+      107,
+      56,
+      109,
+      124,
+      64
+    ],
+    "evoRootId": 573,
+    "seriesId": 20,
+    "sellMP": 5000,
+    "latentAwakeningId": 0,
+    "collabId": 0,
+    "flags": 35,
+    "canAssist": true,
+    "enabled": true,
+    "stackable": false,
+    "is8Latent": true,
+    "skillBanner": false,
+    "altName": [
+      "Greco-Roman Gods",
+      "Greek Gods"
+    ],
+    "limitBreakIncr": 100,
+    "voiceId": 0,
+    "orbSkinOrBgmId": 0,
+    "specialAttribute": "",
+    "searchFlags": [
+      37749260,
+      0
+    ],
+    "gachaGroupsFlag": 0,
+    "badgeId": 0,
+    "otLangName": {
+      "ja": "超転生アポロン",
+      "cht": "超轉生阿波羅",
+      "chs": "超转生阿波罗",
+      "ko": "초환생 아폴론"
+    },
+    "otTags": [
+      "西洋神",
+      "希臘神話",
+      "超轉生進化",
+      "希腊神话",
+      "超转生进化",
+      "그리스신"
+    ]
+  },
+  "skills": [
+    {
+      "id": 130,
+      "name": "",
+      "description": "",
+      "type": 172,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": []
+    },
+    {
+      "id": 3924,
+      "name": "Sunlight Harmony",
+      "description": "Removes {locks}, changes {Dark}{Heal} to {Light} ; 10x ATK for this ally & Light\nAtt. and {Light} slightly more likely to appear for 8 turns",
+      "type": 116,
+      "maxLevel": 11,
+      "initialCooldown": 12,
+      "unk": "",
+      "params": [
+        130,
+        3925,
+        45806,
+        45807,
+        3926
+      ]
+    },
+    {
+      "id": 3925,
+      "name": "",
+      "description": "",
+      "type": 154,
+      "maxLevel": 6,
+      "initialCooldown": 10,
+      "unk": "",
+      "params": [
+        48,
+        8
+      ]
+    },
+    {
+      "id": 3926,
+      "name": "",
+      "description": "",
+      "type": 126,
+      "maxLevel": 6,
+      "initialCooldown": 10,
+      "unk": "",
+      "params": [
+        8,
+        8,
+        8,
+        15
+      ]
+    },
+    {
+      "id": 24300,
+      "name": "True Spirit of the Solar Deity",
+      "description": "2.7x HP for Light Att.; halves dmg with 2+ Light combos;\n50x ATK & inflicts 16,000,000 damage with 7+ combos",
+      "type": 138,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        24301,
+        24302,
+        24310,
+        24311
+      ]
+    },
+    {
+      "id": 24301,
+      "name": "",
+      "description": "",
+      "type": 129,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        0,
+        270
+      ]
+    },
+    {
+      "id": 24302,
+      "name": "",
+      "description": "",
+      "type": 171,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        8,
+        0,
+        0,
+        2,
+        100,
+        50
+      ]
+    },
+    {
+      "id": 24310,
+      "name": "",
+      "description": "",
+      "type": 66,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        7,
+        5000
+      ]
+    },
+    {
+      "id": 24311,
+      "name": "",
+      "description": "",
+      "type": 223,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        7,
+        16000000
+      ]
+    },
+    {
+      "id": 45806,
+      "name": "",
+      "description": "",
+      "type": 230,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        1,
+        1000
+      ]
+    },
+    {
+      "id": 45807,
+      "name": "",
+      "description": "",
+      "type": 50,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        3,
+        1000
+      ]
+    }
+  ]
+}

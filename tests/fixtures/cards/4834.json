@@ -1,0 +1,265 @@
+{
+  "snapshot_commit": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+  "monster_id": 4834,
+  "name": "Chosen War Goddess, Valkyrie - Ciel",
+  "provenance": {
+    "source": "PADDashFormation/NA",
+    "version": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+    "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8/monsters-info/mon_en.json",
+    "fetched_at": "2026-11-05T23:59:50.549212+00:00",
+    "updated_at": "2026-10-30T12:00:38.631000+00:00",
+    "sha256": "e3aaa7a7a3f34080ee40756cfd85ed3bb3956418f452cb674915a5749254605a",
+    "usage": "Upstream code GPL-3.0; game art/metadata third-party; local cache only"
+  },
+  "skill_index": {
+    "file": "monsters-info/skill_en.json",
+    "sha256": "b100979ea3ab7931239fcc8da0b5a525111283468b9b2a14e87c4a4ee9214113"
+  },
+  "card": {
+    "id": 4834,
+    "name": "Chosen War Goddess, Valkyrie - Ciel",
+    "attrs": [
+      3,
+      3,
+      3
+    ],
+    "types": [
+      3,
+      5,
+      6
+    ],
+    "isUltEvo": false,
+    "rarity": 7,
+    "cost": 30,
+    "maxLevel": 99,
+    "feedExp": 5550,
+    "isEmpty": false,
+    "sellPrice": 5850,
+    "hp": {
+      "min": 841,
+      "max": 4350,
+      "scale": 1
+    },
+    "atk": {
+      "min": 331,
+      "max": 9500,
+      "scale": 1
+    },
+    "rcv": {
+      "min": 188,
+      "max": 860,
+      "scale": 1
+    },
+    "exp": {
+      "min": 0,
+      "max": 5000000,
+      "scale": 2.5
+    },
+    "activeSkillId": 11780,
+    "leaderSkillId": 11783,
+    "evoBaseId": 0,
+    "evoMaterials": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "unevoMaterials": [
+      155,
+      156,
+      157,
+      158,
+      159
+    ],
+    "awakenings": [
+      52,
+      56,
+      28,
+      104,
+      111,
+      111,
+      31,
+      32,
+      33
+    ],
+    "superAwakenings": [
+      31,
+      32,
+      33,
+      34,
+      104,
+      127
+    ],
+    "evoRootId": 4834,
+    "seriesId": 28,
+    "sellMP": 75000,
+    "latentAwakeningId": 0,
+    "collabId": 0,
+    "flags": 35,
+    "canAssist": true,
+    "enabled": true,
+    "stackable": false,
+    "is8Latent": true,
+    "skillBanner": false,
+    "altName": [
+      "Fest Exclusive",
+      "Norse Gods"
+    ],
+    "limitBreakIncr": 15,
+    "voiceId": 0,
+    "orbSkinOrBgmId": 2,
+    "specialAttribute": "",
+    "searchFlags": [
+      5243908,
+      0
+    ],
+    "gachaGroupsFlag": 0,
+    "badgeId": 0,
+    "otLangName": {
+      "ja": "選魂の戦姫神・ヴァルキリー -CIEL-",
+      "cht": "選魂之戰姬神・瓦爾奇琳 -CIEL-",
+      "chs": "选魂的战姬神・瓦尔奇琳 -CIEL-",
+      "ko": "영혼 선별의 전희신 발키리 -CIEL-"
+    },
+    "otTags": [
+      "フェス限定",
+      "ふぇすげんてい",
+      "ヴぁるきりーしえる",
+      "北欧神",
+      "FES限定寵物",
+      "北歐神話",
+      "女武神",
+      "寶珠外觀",
+      "神UP限定宠物",
+      "北欧神话",
+      "宝珠外观",
+      "페스티벌 한정",
+      "북유럽신"
+    ]
+  },
+  "skills": [
+    {
+      "id": 130,
+      "name": "",
+      "description": "",
+      "type": 172,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": []
+    },
+    {
+      "id": 11780,
+      "name": "Sacred Feather",
+      "description": "Fully recovers HP, bind (incl. Awoken) & unmatchable;\nremoves {locks}, changes {Heal}{Jammers}{Poison}{Lethal Poison}{Bombs} to {Light}",
+      "type": 116,
+      "maxLevel": 9,
+      "initialCooldown": 13,
+      "unk": "",
+      "params": [
+        33906,
+        11781,
+        130,
+        11782
+      ]
+    },
+    {
+      "id": 11781,
+      "name": "",
+      "description": "",
+      "type": 117,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        9999,
+        0,
+        0,
+        100,
+        9999
+      ]
+    },
+    {
+      "id": 11782,
+      "name": "",
+      "description": "",
+      "type": 154,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        992,
+        8
+      ]
+    },
+    {
+      "id": 11783,
+      "name": "Innocent Soul",
+      "description": "5.4x HP & ATK for {Healer} ; Orb move time +2 seconds;\n10x ATK & inflicts 10,000,000 damage with 4+ combos",
+      "type": 138,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        11784,
+        11785,
+        35673
+      ]
+    },
+    {
+      "id": 11784,
+      "name": "",
+      "description": "",
+      "type": 185,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        200,
+        0,
+        8,
+        540,
+        540
+      ]
+    },
+    {
+      "id": 11785,
+      "name": "",
+      "description": "",
+      "type": 66,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        4,
+        1000
+      ]
+    },
+    {
+      "id": 33906,
+      "name": "",
+      "description": "",
+      "type": 196,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        9999
+      ]
+    },
+    {
+      "id": 35673,
+      "name": "",
+      "description": "",
+      "type": 223,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        4,
+        10000000
+      ]
+    }
+  ]
+}

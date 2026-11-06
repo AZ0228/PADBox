@@ -1,17 +1,24 @@
-"""Decode skill type/params into verified effects.
+"""Decode skill type/params into typed effects.
 
-Compound actives (type 116) and leader skills (type 138) are lists of component
-skill IDs. Layouts below were checked against repeated NA description pairings in
-the pinned snapshot. A layout that does not match stays an unknown effect.
-English description text is not parsed.
+`read_skill` is syntactic: it keeps the skill type and raw parameter list.
+It does not read description text and does not assign a game-rule meaning.
+Interpretation then accepts only layouts checked against repeated NA
+description pairings. Those effects are verified. Any other layout is an
+explicit unsupported effect.
+
+Compound actives (type 116) and leader skills (type 138) list independent
+components, so those components stay separate effects. A component whose
+parameters belong together stays one effect: an absorb void lists every kind
+it voids, and a linked-orb shield keeps its link condition. An evolving skill
+(type 232) stays one grouped effect whose stages are nested, not simultaneous.
 """
 
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 FULL_CLEAR = 9999
-DECODER_VERSION = "5"
+DECODER_VERSION = "6"
 
 ATTRIBUTES = {0: "fire", 1: "water", 2: "wood", 3: "light", 4: "dark"}
 ATTRIBUTE_BITS = {1: "fire", 2: "water", 4: "wood", 8: "light", 16: "dark"}
@@ -95,6 +102,267 @@ TRIGGER_BITS = {
 ABSORB_KINDS = ("attribute", "combo", "damage")
 
 
+class EffectParameters(BaseModel):
+    """Typed parameters. This is the interpreted shape, not the raw integer list."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class Duration(BaseModel):
+    turns: int | None = None
+    full: bool = False
+    start_turn: int | None = None
+    end_turn: int | None = None
+
+
+class SkillSyntax(BaseModel):
+    """What the raw skill record says, before a game-rule meaning is attached."""
+
+    skill_id: int | None
+    source_type: int
+    raw_parameters: list[int]
+
+
+class EffectProvenance(BaseModel):
+    source: str
+    decoder_version: str
+    evidence_level: Literal["syntactic", "verified", "unsupported", "source_encoded"]
+    supported_parameters: list[str]
+    unknown_parameters: list[str]
+    verification_status: Literal["verified", "unverified", "unsupported"]
+
+
+class UnsupportedParameters(EffectParameters):
+    raw: list[int] = Field(default_factory=list)
+    component_id: int | None = None
+
+
+class CreateOrbsParameters(EffectParameters):
+    count: int
+    colors: list[str]
+
+
+class OrbReplaceParameters(EffectParameters):
+    count: int
+    excluded_colors: list[str]
+    destination: list[str]
+
+
+class OrbConvertParameters(EffectParameters):
+    source_colors: list[str]
+    destination: list[str]
+
+
+class OrbSwap(BaseModel):
+    source: str
+    destination: str
+
+
+class OrbChangeParameters(EffectParameters):
+    changes: list[OrbSwap]
+    destinations: list[str]
+
+
+class BoardChangeParameters(EffectParameters):
+    orbs: list[str]
+
+
+class BoardSizeParameters(EffectParameters):
+    duration: Duration
+    columns: int
+    rows: int
+
+
+class LinePlacement(BaseModel):
+    where: str
+    orbs: list[str]
+
+
+class LineChangeParameters(EffectParameters):
+    lines: list[LinePlacement]
+    destinations: list[str]
+
+
+class LockClearParameters(EffectParameters):
+    full: bool
+
+
+class SkyfallParameters(EffectParameters):
+    duration: Duration
+    orbs: list[str]
+    rate: int
+    mode: str
+
+
+class RouletteParameters(EffectParameters):
+    duration: Duration
+    count: int
+    speed: str
+
+
+class DamageShieldParameters(EffectParameters):
+    duration: Duration
+    percent: int
+
+
+class AttributeGuardParameters(EffectParameters):
+    duration: Duration
+    attribute: str
+    percent: int
+
+
+class StatModifierParameters(EffectParameters):
+    duration: Duration | None = None
+    multiplier_hundredths: int | None = None
+    attribute: str | None = None
+    card_type: str | None = None
+    target: str | None = None
+
+
+class HpCostParameters(EffectParameters):
+    to_one: bool = False
+    remaining_percent: int | None = None
+
+
+class HealParameters(EffectParameters):
+    duration: Duration | None = None
+    multiplier_hundredths: int | None = None
+    hp: int | None = None
+    percent: int | None = None
+
+
+class AbsorbVoidParameters(EffectParameters):
+    duration: Duration
+    kinds: list[str]
+
+
+class TimedEffectParameters(EffectParameters):
+    duration: Duration
+
+
+class BindClearParameters(TimedEffectParameters):
+    pass
+
+
+class AwokenBindClearParameters(TimedEffectParameters):
+    pass
+
+
+class UnmatchableClearParameters(TimedEffectParameters):
+    pass
+
+
+class DelayParameters(TimedEffectParameters):
+    pass
+
+
+class HasteParameters(TimedEffectParameters):
+    pass
+
+
+class VoidPierceParameters(TimedEffectParameters):
+    pass
+
+
+class NoSkyfallParameters(TimedEffectParameters):
+    pass
+
+
+class DefenseBreakParameters(EffectParameters):
+    duration: Duration
+    percent: int
+
+
+class SingleAttackParameters(EffectParameters):
+    attribute: str
+    multiplier_hundredths: int
+
+
+class TransformParameters(EffectParameters):
+    monster_id: int
+
+
+class DamageCapParameters(EffectParameters):
+    duration: Duration
+    billion_tenths: int
+    target: str
+
+
+class AttributeChangeParameters(EffectParameters):
+    duration: Duration
+    attribute: str
+
+
+class MoveTimeParameters(EffectParameters):
+    seconds: int | float | None = None
+    multiplier_hundredths: int | None = None
+    duration: Duration | None = None
+
+
+class LinkedOrbParameters(EffectParameters):
+    attributes: list[str]
+    minimum_linked: int
+    atk_multiplier_hundredths: int
+    shield_percent: int
+
+
+class AwakeningTriggerParameters(EffectParameters):
+    trigger: str
+    atk_multiplier_hundredths: int
+    rcv_multiplier_hundredths: int
+    shield_percent: int
+    added_combos: int
+    fixed_damage: int
+
+
+class OrbEnhanceParameters(EffectParameters):
+    orbs: list[str]
+
+
+class AddedCombosParameters(EffectParameters):
+    duration: Duration
+    combos: int
+
+
+class PercentParameters(EffectParameters):
+    percent: int
+
+
+class ShieldBreakParameters(EffectParameters):
+    shields: int | None = None
+    percent: int | None = None
+
+
+class ComboOrbParameters(EffectParameters):
+    count: int | None = None
+    source_color: str | None = None
+
+
+class RankExpParameters(EffectParameters):
+    multiplier_hundredths: int
+
+
+class MassAttackParameters(EffectParameters):
+    attribute: str
+    multiplier_hundredths: int
+
+
+class EmptyParameters(EffectParameters):
+    pass
+
+
+class RecordedParameters(EffectParameters):
+    """Verified effect whose details have not been given a named model yet."""
+
+    values: dict[str, Any]
+
+
+class AwakeningParameters(EffectParameters):
+    awakening_id: int
+    name: str | None
+    effects: dict[str, Any]
+
+
 class Effect(BaseModel):
     kind: str
     evidence: str
@@ -102,50 +370,171 @@ class Effect(BaseModel):
     skill_id: int | None = None
     summary: str
     details: dict[str, Any] = Field(default_factory=dict)
+    parameters: Any = None
+    provenance: EffectProvenance | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _attach_structure(cls, data: Any) -> Any:
+        if not isinstance(data, dict) or data.get("provenance") is not None:
+            return data
+        details = dict(data.get("details") or {})
+        kind = str(data.get("kind") or "unsupported")
+        evidence = str(data.get("evidence") or "unknown")
+        source_type = data.get("source_type")
+        source_type = int(source_type) if source_type is not None else -1
+        parameters, supported, unknown = _parameters_from(kind, details)
+        if kind == "unsupported" or evidence == "unknown":
+            level = "unsupported"
+            status = "unsupported"
+        elif evidence == "verified":
+            level = "verified"
+            status = "verified"
+        elif evidence == "source_encoded":
+            level = "source_encoded"
+            status = "unverified"
+        else:
+            level = "syntactic"
+            status = "unverified"
+        data["parameters"] = parameters
+        data["provenance"] = EffectProvenance(
+            source=_source(data.get("skill_id"), source_type),
+            decoder_version=DECODER_VERSION,
+            evidence_level=level,
+            supported_parameters=supported,
+            unknown_parameters=unknown,
+            verification_status=status,
+        )
+        return data
+
+
+class SkillStage(BaseModel):
+    skill_id: int | None
+    source_type: int
+    effects: list[Effect]
+
+
+class EvolvingParameters(EffectParameters):
+    stages: list[SkillStage]
+    loops: bool | None = None
+
+
+def read_skill(skill: dict[str, Any]) -> SkillSyntax:
+    """Copy type and parameters. Description text is ignored on purpose."""
+    raw_type = skill.get("type")
+    return SkillSyntax(
+        skill_id=int(skill.get("id") or 0) or None,
+        source_type=int(raw_type) if raw_type is not None else -1,
+        raw_parameters=[int(value) for value in skill.get("params") or []],
+    )
+
+
+def _source(skill_id: int | None, source_type: int | None) -> str:
+    if skill_id:
+        return f"skill:{int(skill_id)}/type:{int(source_type)}"
+    return f"type:{int(source_type)}"
+
+
+def _bind_source(effect: Effect, skill_id: int | None) -> Effect:
+    effect.skill_id = skill_id or None
+    if effect.provenance is not None:
+        effect.provenance.source = _source(effect.skill_id, effect.source_type)
+    return effect
 
 
 def decode_skill(
     skill: dict[str, Any], index: dict[int, dict[str, Any]], seen: set[int] | None = None
 ) -> list[Effect]:
-    """Flatten one skill. `index` maps every component skill ID to its raw record."""
+    """Interpret one skill. `index` maps every component skill ID to its raw record."""
     visiting = set() if seen is None else seen
-    skill_id = int(skill.get("id") or 0)
-    if skill_id and skill_id in visiting:
-        return [_unknown(skill, "skill reference cycle")]
-    if skill_id:
-        visiting.add(skill_id)
+    syntax = read_skill(skill)
+    if syntax.skill_id and syntax.skill_id in visiting:
+        return [_bind_source(_unsupported_syntax(syntax, "skill reference cycle"), syntax.skill_id)]
+    if syntax.skill_id:
+        visiting.add(syntax.skill_id)
     try:
-        kind = int(skill.get("type") if skill.get("type") is not None else -1)
-        params = [int(value) for value in skill.get("params") or []]
-        if kind in {116, 138}:
-            effects: list[Effect] = []
-            for child_id in params:
-                child = index.get(child_id)
-                if child is None:
-                    effects.append(
-                        Effect(
-                            kind="unknown",
-                            evidence="unknown",
-                            source_type=kind,
-                            skill_id=skill_id or None,
-                            summary=f"Component skill {child_id} is not in the local skill index",
-                            details={"component_id": child_id},
-                        )
-                    )
-                    continue
-                effects.extend(decode_skill(child, index, visiting))
-            return effects
-        return _decode_leaf(skill_id, kind, params)
+        return _interpret(syntax, index, visiting)
     finally:
-        if skill_id:
-            visiting.discard(skill_id)
+        if syntax.skill_id:
+            visiting.discard(syntax.skill_id)
 
 
-def _decode_leaf(skill_id: int, kind: int, params: list[int]) -> list[Effect]:
+def _interpret(
+    syntax: SkillSyntax, index: dict[int, dict[str, Any]], visiting: set[int]
+) -> list[Effect]:
+    if syntax.source_type in {116, 138}:
+        return _independent_components(syntax, index, visiting)
+    if syntax.source_type == 232:
+        return [_evolving(syntax, index, visiting)]
+    return _decode_leaf(syntax.skill_id, syntax.source_type, syntax.raw_parameters)
+
+
+def _independent_components(
+    syntax: SkillSyntax, index: dict[int, dict[str, Any]], visiting: set[int]
+) -> list[Effect]:
+    """Each component fires with the skill. None of them is a later stage."""
+    effects: list[Effect] = []
+    for child_id in syntax.raw_parameters:
+        child = index.get(child_id)
+        if child is None:
+            effects.append(
+                _bind_source(
+                    Effect(
+                        kind="unsupported",
+                        evidence="unknown",
+                        source_type=syntax.source_type,
+                        summary=f"Component skill {child_id} is not in the local skill index",
+                        details={"component_id": child_id},
+                    ),
+                    syntax.skill_id,
+                )
+            )
+            continue
+        effects.extend(decode_skill(child, index, visiting))
+    return effects
+
+
+def _evolving(
+    syntax: SkillSyntax, index: dict[int, dict[str, Any]], visiting: set[int]
+) -> Effect:
+    """Stages are alternatives over time. They are not one flat active."""
+    stages: list[SkillStage] = []
+    missing: list[int] = []
+    for child_id in syntax.raw_parameters:
+        child = index.get(child_id)
+        if child is None:
+            missing.append(child_id)
+            continue
+        child_syntax = read_skill(child)
+        stages.append(
+            SkillStage(
+                skill_id=child_syntax.skill_id,
+                source_type=child_syntax.source_type,
+                effects=decode_skill(child, index, visiting),
+            )
+        )
+    return Effect(
+        kind="evolving_skill",
+        evidence="syntactic",
+        source_type=syntax.source_type,
+        skill_id=syntax.skill_id,
+        summary=f"Evolving skill with {len(stages)} stages",
+        details={"stage_ids": list(syntax.raw_parameters)},
+        parameters=EvolvingParameters(stages=stages, loops=None),
+        provenance=EffectProvenance(
+            source=_source(syntax.skill_id, syntax.source_type),
+            decoder_version=DECODER_VERSION,
+            evidence_level="syntactic",
+            supported_parameters=["stages"],
+            unknown_parameters=["loops", *[f"stage:{child_id}" for child_id in missing]],
+            verification_status="unverified",
+        ),
+    )
+
+
+def _decode_leaf(skill_id: int | None, kind: int, params: list[int]) -> list[Effect]:
     decoded = _LEAVES.get(kind, _unsupported)(kind, params)
-    for effect in decoded:
-        effect.skill_id = skill_id or None
-    return decoded
+    return [_bind_source(effect, skill_id) for effect in decoded]
 
 
 def _unsupported(kind: int, params: list[int]) -> list[Effect]:
@@ -154,7 +543,7 @@ def _unsupported(kind: int, params: list[int]) -> list[Effect]:
 
 def _unknown_leaf(kind: int, params: list[int], reason: str) -> Effect:
     return Effect(
-        kind="unknown",
+        kind="unsupported",
         evidence="unknown",
         source_type=kind,
         summary=reason,
@@ -162,12 +551,54 @@ def _unknown_leaf(kind: int, params: list[int], reason: str) -> Effect:
     )
 
 
-def _unknown(skill: dict[str, Any], reason: str) -> Effect:
-    kind = int(skill.get("type") or -1)
-    params = [int(value) for value in skill.get("params") or []]
-    effect = _unknown_leaf(kind, params, reason)
-    effect.skill_id = int(skill.get("id") or 0) or None
-    return effect
+def _unsupported_syntax(syntax: SkillSyntax, reason: str) -> Effect:
+    return _unknown_leaf(syntax.source_type, syntax.raw_parameters, reason)
+
+
+def decode_awakening(awakening_id: int) -> Effect:
+    """One awakening is one grouped effect. Magnitudes are checklist values, not battle proof."""
+    from padbox.mechanics.awakenings import CHECKLIST, NAMES
+
+    name = NAMES.get(awakening_id)
+    checklist = dict(CHECKLIST.get(awakening_id) or {})
+    source = f"awakening:{awakening_id}"
+    if name is None:
+        return Effect(
+            kind="unsupported",
+            evidence="unknown",
+            source_type=-1,
+            summary=f"Unrecognized awakening {awakening_id}",
+            details={"params": [awakening_id]},
+            parameters=UnsupportedParameters(raw=[awakening_id]),
+            provenance=EffectProvenance(
+                source=source,
+                decoder_version=DECODER_VERSION,
+                evidence_level="unsupported",
+                supported_parameters=[],
+                unknown_parameters=[f"[0]={awakening_id}"],
+                verification_status="unsupported",
+            ),
+        )
+    supported = ["name", *checklist.keys()]
+    unknown = [] if checklist else ["magnitude"]
+    return Effect(
+        kind="awakening",
+        evidence="source_encoded",
+        source_type=-1,
+        summary=name,
+        details={"awakening_id": awakening_id, "name": name, "effects": checklist},
+        parameters=AwakeningParameters(
+            awakening_id=awakening_id, name=name, effects=checklist
+        ),
+        provenance=EffectProvenance(
+            source=source,
+            decoder_version=DECODER_VERSION,
+            evidence_level="source_encoded",
+            supported_parameters=supported,
+            unknown_parameters=unknown,
+            verification_status="unverified",
+        ),
+    )
 
 
 def _turns(value: int) -> dict[str, Any]:
@@ -1370,6 +1801,337 @@ def _column_change(kind: int, params: list[int]) -> list[Effect]:
 
 def _row_change(kind: int, params: list[int]) -> list[Effect]:
     return _line_change(kind, params, _ROW_BITS, _ROW_GROUPS, "row_change")
+
+
+def _duration(details: dict[str, Any]) -> Duration:
+    return Duration(
+        turns=details.get("turns"),
+        full=bool(details.get("full")),
+        start_turn=details.get("start_turn"),
+        end_turn=details.get("end_turn"),
+    )
+
+
+def _timed(model: type[EffectParameters], details: dict[str, Any]) -> tuple:
+    return model(duration=_duration(details)), ["duration"], []
+
+
+def _unknown_parameter_names(details: dict[str, Any]) -> list[str]:
+    names = [f"[{index}]={value}" for index, value in enumerate(details.get("params") or [])]
+    if "component_id" in details:
+        names.append(f"component_id={details['component_id']}")
+    return names
+
+
+def _parameters_from(
+    kind: str, details: dict[str, Any]
+) -> tuple[EffectParameters, list[str], list[str]]:
+    """Turn a verified details mapping into the typed parameter model for that effect."""
+    if kind == "unsupported":
+        raw = [int(value) for value in details.get("params") or []]
+        return (
+            UnsupportedParameters(raw=raw, component_id=details.get("component_id")),
+            [],
+            _unknown_parameter_names(details),
+        )
+    if kind == "create_orbs":
+        return (
+            CreateOrbsParameters(count=details["count"], colors=list(details["attributes"])),
+            ["count", "colors"],
+            [],
+        )
+    if kind == "orb_replace":
+        return (
+            OrbReplaceParameters(
+                count=details["count"],
+                excluded_colors=list(details["excluded"]),
+                destination=list(details["to"]),
+            ),
+            ["count", "excluded_colors", "destination"],
+            [],
+        )
+    if kind == "orb_convert":
+        return (
+            OrbConvertParameters(
+                source_colors=list(details["from"]), destination=list(details["to"])
+            ),
+            ["source_colors", "destination"],
+            [],
+        )
+    if kind == "orb_change":
+        changes = [
+            OrbSwap(source=item["from"], destination=item["to"]) for item in details["changes"]
+        ]
+        return (
+            OrbChangeParameters(changes=changes, destinations=list(details["to"])),
+            ["changes", "destinations"],
+            [],
+        )
+    if kind == "board_change":
+        return BoardChangeParameters(orbs=list(details["orbs"])), ["orbs"], []
+    if kind == "board_size":
+        return (
+            BoardSizeParameters(
+                duration=_duration(details), columns=details["columns"], rows=details["rows"]
+            ),
+            ["duration", "columns", "rows"],
+            [],
+        )
+    if kind in {"column_change", "row_change"}:
+        lines = [
+            LinePlacement(where=item["where"], orbs=list(item["orbs"])) for item in details["lines"]
+        ]
+        return (
+            LineChangeParameters(lines=lines, destinations=list(details["to"])),
+            ["lines", "destinations"],
+            [],
+        )
+    if kind == "lock_clear":
+        return LockClearParameters(full=bool(details.get("full"))), ["full"], []
+    if kind == "skyfall":
+        return (
+            SkyfallParameters(
+                duration=_duration(details),
+                orbs=list(details["orbs"]),
+                rate=details["rate"],
+                mode=details["mode"],
+            ),
+            ["duration", "orbs", "rate", "mode"],
+            [],
+        )
+    if kind == "roulette":
+        return (
+            RouletteParameters(
+                duration=_duration(details), count=details["count"], speed=details["speed"]
+            ),
+            ["duration", "count", "speed"],
+            [],
+        )
+    if kind == "damage_shield":
+        return (
+            DamageShieldParameters(duration=_duration(details), percent=details["percent"]),
+            ["duration", "percent"],
+            [],
+        )
+    if kind == "attribute_guard":
+        return (
+            AttributeGuardParameters(
+                duration=_duration(details),
+                attribute=details["attribute"],
+                percent=details["percent"],
+            ),
+            ["duration", "attribute", "percent"],
+            [],
+        )
+    if kind in {"attribute_atk", "rcv_buff", "team_atk", "all_allies_atk", "type_atk", "max_hp"}:
+        return (
+            StatModifierParameters(
+                duration=_duration(details) if "turns" in details else None,
+                multiplier_hundredths=details.get("multiplier_hundredths"),
+                attribute=details.get("attribute"),
+                card_type=details.get("card_type"),
+                target=details.get("target"),
+            ),
+            [
+                name
+                for name, present in (
+                    ("duration", "turns" in details),
+                    ("multiplier_hundredths", "multiplier_hundredths" in details),
+                    ("attribute", "attribute" in details),
+                    ("card_type", "card_type" in details),
+                    ("target", "target" in details),
+                )
+                if present
+            ],
+            [],
+        )
+    if kind == "hp_cost":
+        return (
+            HpCostParameters(
+                to_one=bool(details.get("to_one")),
+                remaining_percent=details.get("remaining_percent"),
+            ),
+            [name for name in ("to_one", "remaining_percent") if details.get(name) is not None],
+            [],
+        )
+    if kind in {"heal_rcv", "heal_flat", "heal_percent", "heal_over_time"}:
+        return (
+            HealParameters(
+                duration=_duration(details) if "turns" in details else None,
+                multiplier_hundredths=details.get("multiplier_hundredths"),
+                hp=details.get("hp"),
+                percent=details.get("percent"),
+            ),
+            [
+                name
+                for name, present in (
+                    ("duration", "turns" in details),
+                    ("multiplier_hundredths", "multiplier_hundredths" in details),
+                    ("hp", "hp" in details),
+                    ("percent", "percent" in details),
+                )
+                if present
+            ],
+            [],
+        )
+    if kind == "absorb_void":
+        return (
+            AbsorbVoidParameters(duration=_duration(details), kinds=list(details["kinds"])),
+            ["duration", "kinds"],
+            [],
+        )
+    if kind == "move_time":
+        return MoveTimeParameters(seconds=details["seconds"]), ["seconds"], []
+    if kind == "void_pierce":
+        return _timed(VoidPierceParameters, details)
+    if kind == "charge_other_skills":
+        return _timed(HasteParameters, details)
+    if kind == "delay":
+        return _timed(DelayParameters, details)
+    if kind == "no_skyfall":
+        return _timed(NoSkyfallParameters, details)
+    if kind == "transform":
+        return TransformParameters(monster_id=details["monster_id"]), ["monster_id"], []
+    if kind == "damage_cap":
+        return (
+            DamageCapParameters(
+                duration=_duration(details),
+                billion_tenths=details["billion_tenths"],
+                target=details["target"],
+            ),
+            ["duration", "billion_tenths", "target"],
+            [],
+        )
+    if kind == "self_attribute":
+        return (
+            AttributeChangeParameters(
+                duration=_duration(details), attribute=details["attribute"]
+            ),
+            ["duration", "attribute"],
+            [],
+        )
+    if kind in {"move_time_bonus", "move_time_buff"}:
+        supported = []
+        if "seconds" in details:
+            supported.append("seconds")
+        if "multiplier_hundredths" in details:
+            supported.append("multiplier_hundredths")
+        if "turns" in details:
+            supported.append("duration")
+        return (
+            MoveTimeParameters(
+                seconds=details.get("seconds"),
+                multiplier_hundredths=details.get("multiplier_hundredths"),
+                duration=_duration(details) if "turns" in details else None,
+            ),
+            supported,
+            [],
+        )
+    if kind == "linked_orb_leader":
+        return (
+            LinkedOrbParameters(
+                attributes=list(details["attributes"]),
+                minimum_linked=details["minimum_linked"],
+                atk_multiplier_hundredths=details["atk_multiplier_hundredths"],
+                shield_percent=details["shield_percent"],
+            ),
+            [
+                "attributes",
+                "minimum_linked",
+                "atk_multiplier_hundredths",
+                "shield_percent",
+            ],
+            [],
+        )
+    if kind == "awakening_trigger":
+        return (
+            AwakeningTriggerParameters(
+                trigger=details["trigger"],
+                atk_multiplier_hundredths=details["atk_multiplier_hundredths"],
+                rcv_multiplier_hundredths=details["rcv_multiplier_hundredths"],
+                shield_percent=details["shield_percent"],
+                added_combos=details["added_combos"],
+                fixed_damage=details["fixed_damage"],
+            ),
+            [
+                "trigger",
+                "atk_multiplier_hundredths",
+                "rcv_multiplier_hundredths",
+                "shield_percent",
+                "added_combos",
+                "fixed_damage",
+            ],
+            [],
+        )
+    if kind == "orb_enhance":
+        return OrbEnhanceParameters(orbs=list(details["orbs"])), ["orbs"], []
+    if kind == "added_combos":
+        return (
+            AddedCombosParameters(duration=_duration(details), combos=details["combos"]),
+            ["duration", "combos"],
+            [],
+        )
+    if kind == "defense_break":
+        return (
+            DefenseBreakParameters(duration=_duration(details), percent=details["percent"]),
+            ["duration", "percent"],
+            [],
+        )
+    if kind in {"gravity", "hp_damage"}:
+        return PercentParameters(percent=details["percent"]), ["percent"], []
+    if kind == "shield_break":
+        supported = [name for name in ("shields", "percent") if name in details]
+        return (
+            ShieldBreakParameters(shields=details.get("shields"), percent=details.get("percent")),
+            supported,
+            [],
+        )
+    if kind == "create_combo_orbs":
+        return ComboOrbParameters(count=details["count"]), ["count"], []
+    if kind == "combo_convert":
+        return ComboOrbParameters(source_color=details["from"]), ["source_color"], []
+    if kind == "rank_exp":
+        return (
+            RankExpParameters(multiplier_hundredths=details["multiplier_hundredths"]),
+            ["multiplier_hundredths"],
+            [],
+        )
+    if kind == "mass_attack":
+        return (
+            MassAttackParameters(
+                attribute=details["attribute"],
+                multiplier_hundredths=details["multiplier_hundredths"],
+            ),
+            ["attribute", "multiplier_hundredths"],
+            [],
+        )
+    if kind == "single_attack":
+        return (
+            SingleAttackParameters(
+                attribute=details["attribute"],
+                multiplier_hundredths=details["multiplier_hundredths"],
+            ),
+            ["attribute", "multiplier_hundredths"],
+            [],
+        )
+    if kind == "attribute_multiplier":
+        return (
+            StatModifierParameters(
+                attribute=details["attribute"],
+                multiplier_hundredths=details["multiplier_hundredths"],
+            ),
+            ["attribute", "multiplier_hundredths"],
+            [],
+        )
+    if kind in {"board_refresh", "leader_swap"}:
+        return EmptyParameters(), [], []
+    if kind == "bind_clear":
+        return _timed(BindClearParameters, details)
+    if kind == "awoken_bind_clear":
+        return _timed(AwokenBindClearParameters, details)
+    if kind == "unmatchable_clear":
+        return _timed(UnmatchableClearParameters, details)
+    return RecordedParameters(values=dict(details)), list(details), []
 
 
 _LEAVES = {

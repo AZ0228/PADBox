@@ -27,7 +27,7 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 | TB-17 | Open | Medium — data-quality concern / evidence gap | Previous 29-SB result and historical selection cannot be reproduced from supplied details |
 | TB-18 | Fixed | Low — confirmed reporting bug | `candidate_copies`/`omitted_copies` count monster-ID groups, not copies |
 | TB-19 | Fixed | Low — confirmed reporting omission | Leader evolution investment is absent from named-team `investments` |
-| TB-20 | Open | Medium — data-quality concern | Raw ID/name mismatch in requested Gaia comparison; evolving skill type232 unsupported |
+| TB-20 | Partial | Medium — data-quality concern | Gaia regression fixture pins #8336; evolving skill type 232 still unsupported |
 
 ## TB-01 — Standard team shape is not enforced
 
@@ -259,7 +259,7 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 ## TB-20 — Gaia ID mismatch and unsupported evolving active
 
-**Status:** Open. Active type 232 is still undecoded, and the #8736 / #8336 name mismatch is unchanged.
+**Status:** Partial. Regression fixtures in `tests/fixtures/cards/` record Ultraman Gaia (V2) as #8336 from the pinned 2026-10-30 snapshot and do not include #8736. Test: `test_regression_cards_match_the_pinned_snapshot`. Active type 232 is still undecoded, so evolving-skill stage progression remains open.
 
 **Evidence:** Local reference identifies #8736 as **Feathers of Fierce Wings**; named **Ultraman Gaia (V2)** is #8336. Literal #8736 is not owned/reachable. #8336 is owned once, has source active type232 with params `[26757,26760]`, and is unknown because `src/padbox/mechanics/decode.py:120,1375–1425` only expands compounds116/138 and has no232 leaf.
 
@@ -267,7 +267,7 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 **Impact:** A name-based external recommendation and numeric-ID lookup can discuss different cards; the named Gaia's staged active cannot be evaluated by this decoder. An absence of generator answers does not establish that the real skill provides none.
 
-**Missing regression evidence:** Input name/ID consistency checks and evolving-skill stage decoding/state progression. No claim that #8736 itself was mistranslated by the adapter.
+**Missing regression evidence:** Evolving-skill stage decoding and state progression. The name/ID check is the fixture test above. No claim that #8736 itself was mistranslated by the adapter.
 
 ## Verification status
 

@@ -1,0 +1,301 @@
+{
+  "snapshot_commit": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+  "monster_id": 10756,
+  "name": "Love Deity of the Divine Transcendence, Venus",
+  "provenance": {
+    "source": "PADDashFormation/NA",
+    "version": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+    "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8/monsters-info/mon_en.json",
+    "fetched_at": "2026-11-05T23:59:50.549212+00:00",
+    "updated_at": "2026-10-30T12:00:38.631000+00:00",
+    "sha256": "e3aaa7a7a3f34080ee40756cfd85ed3bb3956418f452cb674915a5749254605a",
+    "usage": "Upstream code GPL-3.0; game art/metadata third-party; local cache only"
+  },
+  "skill_index": {
+    "file": "monsters-info/skill_en.json",
+    "sha256": "b100979ea3ab7931239fcc8da0b5a525111283468b9b2a14e87c4a4ee9214113"
+  },
+  "card": {
+    "id": 10756,
+    "name": "Love Deity of the Divine Transcendence, Venus",
+    "attrs": [
+      3,
+      2,
+      3
+    ],
+    "types": [
+      5,
+      3,
+      2
+    ],
+    "isUltEvo": false,
+    "rarity": 7,
+    "cost": 20,
+    "maxLevel": 99,
+    "feedExp": 4050,
+    "isEmpty": false,
+    "sellPrice": 4350,
+    "hp": {
+      "min": 1738,
+      "max": 8514,
+      "scale": 1
+    },
+    "atk": {
+      "min": 768,
+      "max": 2901,
+      "scale": 1
+    },
+    "rcv": {
+      "min": 518,
+      "max": 2024,
+      "scale": 1
+    },
+    "exp": {
+      "min": 0,
+      "max": 1000000000,
+      "scale": 2.5
+    },
+    "activeSkillId": 41360,
+    "leaderSkillId": 41361,
+    "evoBaseId": 5637,
+    "evoMaterials": [
+      65535,
+      7167,
+      1,
+      0,
+      0
+    ],
+    "unevoMaterials": [
+      155,
+      156,
+      157,
+      158,
+      159
+    ],
+    "awakenings": [
+      52,
+      56,
+      28,
+      104,
+      104,
+      46,
+      46,
+      110,
+      63
+    ],
+    "superAwakenings": [],
+    "evoRootId": 128,
+    "seriesId": 20,
+    "sellMP": 5000,
+    "latentAwakeningId": 0,
+    "collabId": 0,
+    "flags": 98,
+    "canAssist": false,
+    "enabled": true,
+    "stackable": false,
+    "is8Latent": true,
+    "skillBanner": true,
+    "altName": [
+      "Greco-Roman Gods",
+      "Greek Gods"
+    ],
+    "limitBreakIncr": 10,
+    "voiceId": 1225,
+    "orbSkinOrBgmId": 0,
+    "specialAttribute": "",
+    "searchFlags": [
+      20972552,
+      0
+    ],
+    "gachaGroupsFlag": 0,
+    "badgeId": 0,
+    "syncAwakening": 59,
+    "syncAwakeningConditions": [
+      {
+        "id": 2946,
+        "level": 120,
+        "skillLevel": 6
+      },
+      {
+        "id": 8399,
+        "level": 120,
+        "skillLevel": 6
+      }
+    ],
+    "otLangName": {
+      "ja": "慈愛の超越神・ヴィーナス",
+      "chs": "慈爱的超越神・维纳斯",
+      "ko": "자애의 초월신 비너스"
+    },
+    "otTags": [
+      "西洋神",
+      "希腊神话",
+      "试炼进化",
+      "그리스신"
+    ]
+  },
+  "skills": [
+    {
+      "id": 90,
+      "name": "All Orbs Enhancement",
+      "description": "",
+      "type": 140,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        63,
+        6
+      ]
+    },
+    {
+      "id": 130,
+      "name": "",
+      "description": "",
+      "type": 172,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": []
+    },
+    {
+      "id": 41360,
+      "name": "Beautiful Tenderness",
+      "description": "Removes {locks}, creates 4 {Heal} ; 2x RCV for 4 turns; all Orbs\nenhanced; fully recovers Awoken bind & unmatchable",
+      "type": 116,
+      "maxLevel": 7,
+      "initialCooldown": 10,
+      "unk": "",
+      "params": [
+        130,
+        41365,
+        41366,
+        90,
+        41367,
+        41368
+      ]
+    },
+    {
+      "id": 41361,
+      "name": "Prime of the Love Deity",
+      "description": "Reduces dmg with 2+ Light combos, 45x ATK & inflicts\n8,000,000 damage with 3+; 3.3x HP & 6x RCV for {God}",
+      "type": 138,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        41372,
+        41373,
+        41374
+      ]
+    },
+    {
+      "id": 41365,
+      "name": "",
+      "description": "",
+      "type": 141,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        4,
+        32,
+        32
+      ]
+    },
+    {
+      "id": 41366,
+      "name": "",
+      "description": "",
+      "type": 50,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        4,
+        5,
+        200
+      ]
+    },
+    {
+      "id": 41367,
+      "name": "",
+      "description": "",
+      "type": 196,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        9999
+      ]
+    },
+    {
+      "id": 41368,
+      "name": "",
+      "description": "",
+      "type": 117,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        0,
+        0,
+        0,
+        0,
+        9999
+      ]
+    },
+    {
+      "id": 41372,
+      "name": "",
+      "description": "",
+      "type": 171,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        8,
+        8,
+        0,
+        2,
+        100,
+        35,
+        4400
+      ]
+    },
+    {
+      "id": 41373,
+      "name": "",
+      "description": "",
+      "type": 129,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        0,
+        32,
+        330,
+        0,
+        600
+      ]
+    },
+    {
+      "id": 41374,
+      "name": "",
+      "description": "",
+      "type": 201,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        8,
+        8,
+        0,
+        3,
+        8000000
+      ]
+    }
+  ]
+}
