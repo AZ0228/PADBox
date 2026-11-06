@@ -29,6 +29,10 @@ sources = typer.Typer(no_args_is_help=True, help="Load local or pinned public re
 app.add_typer(sources, name="sources")
 scans = typer.Typer(no_args_is_help=True, help="Full-box drafts, diffs and replacement history")
 app.add_typer(scans, name="scans")
+team = typer.Typer(
+    no_args_is_help=True, help="Score a named team, search the box, or compare two teams"
+)
+app.add_typer(team, name="team")
 
 
 @app.callback()
@@ -426,6 +430,138 @@ def check_team_command(
     except (ValueError, OSError, json.JSONDecodeError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     emit(report)
+
+
+@team.command("evaluate")
+def team_evaluate(
+    ctx: typer.Context,
+    team_file: Annotated[
+        Path, typer.Option("--team", help="JSON team with leader_id, subs, and assists")
+    ],
+    objective: Annotated[str, typer.Option(help="Scoring objective")] = "general",
+    seed: Annotated[int, typer.Option(help="Monte Carlo seed")] = 0,
+    turns: Annotated[int, typer.Option(min=1)] = 10,
+    simulations: Annotated[int, typer.Option(min=1)] = 1000,
+    output: Annotated[Path | None, typer.Option(help="Write the report JSON")] = None,
+) -> None:
+    """Score one supplied team. This does not search."""
+    from pydantic import ValidationError
+
+    from padbox.evaluator import Scenario, evaluate_team
+
+    try:
+        payload = json.loads(team_file.read_text())
+        if not isinstance(payload, dict):
+            raise ValueError("Team file must be an object")
+        scenario = Scenario(
+            name=objective,  # type: ignore[arg-type]
+            seed=seed,
+            turns=turns,
+            simulations=simulations,
+        )
+        report = evaluate_team(payload, scenario, store=ctx.obj)
+    except (ValueError, OSError, json.JSONDecodeError, ValidationError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    _write_json(output, report.model_dump(mode="json"))
+
+
+@team.command("optimize")
+def team_optimize(
+    ctx: typer.Context,
+    leader: Annotated[int, typer.Option("--leader", help="Leader monster id")],
+    helper: Annotated[int | None, typer.Option("--helper", help="Explicit helper id")] = None,
+    dungeon: Annotated[
+        Path | None,
+        typer.Option("--dungeon", help="Not applied. A dungeon file does not change this search"),
+    ] = None,
+    objective: Annotated[str, typer.Option(help="Scoring objective")] = "general",
+    beam_width: Annotated[int, typer.Option(min=1)] = 200,
+    seed: Annotated[int, typer.Option()] = 0,
+    turns: Annotated[int, typer.Option(min=1)] = 10,
+    simulations: Annotated[int, typer.Option(min=1)] = 1000,
+    output: Annotated[Path | None, typer.Option(help="Write the ranked JSON")] = None,
+) -> None:
+    """Search the owned box. Invoke as team optimize."""
+    from pydantic import ValidationError
+
+    from padbox.optimizer import search_teams
+
+    if dungeon is not None:
+        raise typer.BadParameter(
+            f"{dungeon} was not applied. team optimize does not read a dungeon profile, "
+            "and this search cannot claim a dungeon clear."
+        )
+    try:
+        result = search_teams(
+            ctx.obj,
+            leader,
+            helper,
+            objective=objective,  # type: ignore[arg-type]
+            beam_width=beam_width,
+            seed=seed,
+            turns=turns,
+            simulations=simulations,
+        )
+    except (ValueError, ValidationError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    _write_json(output, _search_payload(result))
+
+
+@team.command("compare")
+def team_compare(
+    ctx: typer.Context,
+    left: Annotated[Path, typer.Argument(help="First team JSON")],
+    right: Annotated[Path, typer.Argument(help="Second team JSON")],
+    objective: Annotated[str, typer.Option(help="Scoring objective")] = "general",
+    seed: Annotated[int, typer.Option()] = 0,
+    turns: Annotated[int, typer.Option(min=1)] = 10,
+    simulations: Annotated[int, typer.Option(min=1)] = 1000,
+) -> None:
+    """Compare two named teams. Neither team is selected."""
+    from pydantic import ValidationError
+
+    from padbox.evaluator import Scenario
+    from padbox.evaluator.explain import compare_teams
+
+    try:
+        first = json.loads(left.read_text())
+        second = json.loads(right.read_text())
+        if not isinstance(first, dict) or not isinstance(second, dict):
+            raise ValueError("Each team file must be an object")
+        scenario = Scenario(
+            name=objective,  # type: ignore[arg-type]
+            seed=seed,
+            turns=turns,
+            simulations=simulations,
+        )
+        report = compare_teams(
+            first,
+            second,
+            scenario,
+            store=ctx.obj,
+            left_label=left.name,
+            right_label=right.name,
+        )
+    except (ValueError, OSError, json.JSONDecodeError, ValidationError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    emit(report.model_dump(mode="json"))
+
+
+def _search_payload(result: object) -> dict:
+    """JSON for one search. Ranked reports are models, so dump them explicitly."""
+    payload = result.model_dump(mode="json")  # type: ignore[attr-defined]
+    for bucket in ("beam", "ranked"):
+        for row, team in zip(payload[bucket], getattr(result, bucket), strict=True):
+            report = team.report
+            row["report"] = None if report is None else report.model_dump(mode="json")
+    return payload
+
+
+def _write_json(output: Path | None, payload: object) -> None:
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(payload, indent=2) + "\n")
+    emit(payload)
 
 
 @app.command("evaluate")

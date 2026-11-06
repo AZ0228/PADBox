@@ -1381,6 +1381,34 @@ def test_mechanics_does_not_name_an_optimal_team(tmp_path: Path):
     from padbox.cli import app
 
     names = {command.name for command in app.registered_commands}
-    groups = {group.name for group in app.registered_groups}
     assert {"optimize", "score", "team"}.isdisjoint(names)
-    assert "team" not in groups
+    team_group = next(group for group in app.registered_groups if group.name == "team")
+    assert {"evaluate", "optimize", "compare"} <= {
+        command.name for command in team_group.typer_instance.registered_commands
+    }
+
+
+def test_team_optimize_refuses_a_dungeon_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr("padbox.cli.logging.basicConfig", lambda **kwargs: None)
+    from typer.testing import CliRunner
+
+    from padbox.cli import app
+
+    dungeon = tmp_path / "dungeon.json"
+    dungeon.write_text("{}")
+    result = CliRunner().invoke(
+        app,
+        [
+            "--home",
+            str(tmp_path / "home"),
+            "team",
+            "optimize",
+            "--leader",
+            "1",
+            "--dungeon",
+            str(dungeon),
+        ],
+    )
+    assert result.exit_code != 0
+    assert "team optimize" in result.output
+    assert "not read a dungeon profile" in result.output

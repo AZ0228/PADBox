@@ -14,7 +14,7 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 | TB-04 | Fixed | High — modeling approximation | One-time entry, combat and inherited actives count as simultaneously available coverage |
 | TB-05 | Open | High — missing feature | No actual cross-generator rotation, board, damage, healing or survival model |
 | TB-06 | Open | High — missing feature / scope boundary | No optimizer, winning-team function or quality objective exists |
-| TB-07 | Open | Medium — modeling approximation | Unknown sibling effects lexicographically dominate useful cooldown improvements |
+| TB-07 | Partial | Medium — modeling approximation | Unknown sibling effects lexicographically dominate useful cooldown improvements |
 | TB-08 | Fixed | Medium — confirmed inconsistency | Reserved leader source's mutually exclusive forms consume shortlist positions without spare copies |
 | TB-09 | Open | Medium — confirmed bug | Ordinary-link board bucket key does not match assist answer key |
 | TB-10 | Open | Medium — modeling approximation | Main-attribute and awakening presence is treated as a legality/damage rule |
@@ -103,7 +103,7 @@ Severity measures the risk of misinterpreting output as a playable, strong PAD t
 
 ## TB-07 — Unknown-effect preference can bury useful short cooldowns
 
-**Status:** Open. Shortlist order still places an unknown effect ahead of cooldown.
+**Status:** Partial. The mechanics shortlist still sorts an unknown effect ahead of cooldown. The optimizer pool does not: `generate_candidates` keeps the card and stores the unverified effect as an uncertainty score. Apollo #7844 stays in the Rozé pool beside a faster fully decoded Light converter. Test: `test_apollo_survives_into_the_roze_pool`.
 
 **Evidence:** The complete prefix `(not leader_copies, has_unknown, requires_evolution, len(spends))` precedes cooldown in `src/padbox/mechanics/team.py:801–813`. No effect-specific relevance or uncertainty magnitude is used.
 
