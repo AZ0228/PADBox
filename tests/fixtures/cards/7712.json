@@ -1,0 +1,250 @@
+{
+  "snapshot_commit": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+  "monster_id": 7712,
+  "name": "Leona",
+  "provenance": {
+    "source": "PADDashFormation/NA",
+    "version": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+    "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8/monsters-info/mon_en.json",
+    "fetched_at": "2026-11-05T23:59:50.549212+00:00",
+    "updated_at": "2026-10-30T12:00:38.631000+00:00",
+    "sha256": "e3aaa7a7a3f34080ee40756cfd85ed3bb3956418f452cb674915a5749254605a",
+    "usage": "Upstream code GPL-3.0; game art/metadata third-party; local cache only"
+  },
+  "skill_index": {
+    "file": "monsters-info/skill_en.json",
+    "sha256": "b100979ea3ab7931239fcc8da0b5a525111283468b9b2a14e87c4a4ee9214113"
+  },
+  "card": {
+    "id": 7712,
+    "name": "Leona",
+    "attrs": [
+      3
+    ],
+    "types": [
+      3
+    ],
+    "isUltEvo": false,
+    "rarity": 7,
+    "cost": 24,
+    "maxLevel": 99,
+    "feedExp": 4650,
+    "isEmpty": false,
+    "sellPrice": 4950,
+    "hp": {
+      "min": 619,
+      "max": 4099,
+      "scale": 1
+    },
+    "atk": {
+      "min": 500,
+      "max": 1801,
+      "scale": 1
+    },
+    "rcv": {
+      "min": 173,
+      "max": 1299,
+      "scale": 1
+    },
+    "exp": {
+      "min": 0,
+      "max": 4000000,
+      "scale": 2.5
+    },
+    "activeSkillId": 23724,
+    "leaderSkillId": 23728,
+    "evoBaseId": 0,
+    "evoMaterials": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "unevoMaterials": [
+      155,
+      156,
+      157,
+      158,
+      159
+    ],
+    "awakenings": [
+      52,
+      56,
+      56,
+      28,
+      53,
+      68,
+      55,
+      104,
+      104
+    ],
+    "superAwakenings": [
+      54,
+      56,
+      78,
+      61
+    ],
+    "evoRootId": 7712,
+    "seriesId": 208,
+    "sellMP": 15000,
+    "latentAwakeningId": 0,
+    "collabId": 98,
+    "flags": 35,
+    "canAssist": true,
+    "enabled": true,
+    "stackable": false,
+    "is8Latent": true,
+    "skillBanner": false,
+    "altName": [
+      "Dragon Quest: The Adventure of Dai"
+    ],
+    "limitBreakIncr": 30,
+    "voiceId": 0,
+    "orbSkinOrBgmId": 84,
+    "specialAttribute": "",
+    "searchFlags": [
+      2105858,
+      0
+    ],
+    "gachaGroupsFlag": 0,
+    "badgeId": 0,
+    "otLangName": {
+      "ja": "レオナ",
+      "cht": "蕾歐娜",
+      "chs": "蕾欧娜",
+      "ko": "레오나"
+    },
+    "otTags": [
+      "ドラゴンクエストダイの大冒険",
+      "どらごんくえすとだいのだいぼうけん",
+      "「勇者鬥惡龍 達伊的大冒險」合作活動",
+      "寶珠外觀",
+      "「勇者斗恶龙 达伊的大冒险」合作活动",
+      "宝珠外观",
+      "드래곤퀘스트",
+      "드퀘",
+      "다이의 대모험"
+    ]
+  },
+  "skills": [
+    {
+      "id": 23724,
+      "name": "We just need to hold out a little longer!",
+      "description": "2x RCV for 1 turn;\nfully recovers Awoken Skill bind & unmatchable",
+      "type": 116,
+      "maxLevel": 7,
+      "initialCooldown": 11,
+      "unk": "",
+      "params": [
+        23725,
+        23726,
+        23727
+      ]
+    },
+    {
+      "id": 23725,
+      "name": "",
+      "description": "",
+      "type": 50,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        1,
+        5,
+        200
+      ]
+    },
+    {
+      "id": 23726,
+      "name": "",
+      "description": "",
+      "type": 196,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        9999
+      ]
+    },
+    {
+      "id": 23727,
+      "name": "",
+      "description": "",
+      "type": 117,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        0,
+        0,
+        0,
+        0,
+        9999
+      ]
+    },
+    {
+      "id": 23728,
+      "name": "Fullheal",
+      "description": "4x HP for Light Att., 3x RCV when HP is 50% or less;\n24x ATK & adds 3 combos with 4+ linked Heal Orbs",
+      "type": 138,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        23729,
+        23730,
+        23731
+      ]
+    },
+    {
+      "id": 23729,
+      "name": "",
+      "description": "",
+      "type": 129,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        0,
+        400
+      ]
+    },
+    {
+      "id": 23730,
+      "name": "",
+      "description": "",
+      "type": 183,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        31,
+        0,
+        0,
+        0,
+        0,
+        50,
+        100,
+        300
+      ]
+    },
+    {
+      "id": 23731,
+      "name": "",
+      "description": "",
+      "type": 192,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        32,
+        4,
+        2400,
+        3
+      ]
+    }
+  ]
+}

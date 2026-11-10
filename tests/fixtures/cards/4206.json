@@ -1,0 +1,250 @@
+{
+  "snapshot_commit": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+  "monster_id": 4206,
+  "name": "Sweet Dianthus, Kushinadahime",
+  "provenance": {
+    "source": "PADDashFormation/NA",
+    "version": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+    "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8/monsters-info/mon_en.json",
+    "fetched_at": "2026-11-05T23:59:50.549212+00:00",
+    "updated_at": "2026-10-30T12:00:38.631000+00:00",
+    "sha256": "e3aaa7a7a3f34080ee40756cfd85ed3bb3956418f452cb674915a5749254605a",
+    "usage": "Upstream code GPL-3.0; game art/metadata third-party; local cache only"
+  },
+  "skill_index": {
+    "file": "monsters-info/skill_en.json",
+    "sha256": "b100979ea3ab7931239fcc8da0b5a525111283468b9b2a14e87c4a4ee9214113"
+  },
+  "card": {
+    "id": 4206,
+    "name": "Sweet Dianthus, Kushinadahime",
+    "attrs": [
+      3,
+      2,
+      3
+    ],
+    "types": [
+      5,
+      3
+    ],
+    "isUltEvo": false,
+    "rarity": 7,
+    "cost": 45,
+    "maxLevel": 99,
+    "feedExp": 7800,
+    "isEmpty": false,
+    "sellPrice": 8100,
+    "hp": {
+      "min": 1042,
+      "max": 4605,
+      "scale": 1
+    },
+    "atk": {
+      "min": 629,
+      "max": 2332,
+      "scale": 1
+    },
+    "rcv": {
+      "min": 339,
+      "max": 819,
+      "scale": 1
+    },
+    "exp": {
+      "min": 0,
+      "max": 4000000,
+      "scale": 2.5
+    },
+    "activeSkillId": 9891,
+    "leaderSkillId": 9894,
+    "evoBaseId": 0,
+    "evoMaterials": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "unevoMaterials": [
+      155,
+      156,
+      157,
+      158,
+      159
+    ],
+    "awakenings": [
+      52,
+      56,
+      115,
+      53,
+      53,
+      82,
+      104,
+      104,
+      46
+    ],
+    "superAwakenings": [
+      46,
+      107,
+      44,
+      56,
+      82,
+      127
+    ],
+    "evoRootId": 4206,
+    "seriesId": 63,
+    "sellMP": 15000,
+    "latentAwakeningId": 0,
+    "collabId": 0,
+    "flags": 35,
+    "canAssist": true,
+    "enabled": true,
+    "stackable": false,
+    "is8Latent": true,
+    "skillBanner": false,
+    "altName": [
+      "Valentine",
+      "Holiday",
+      "Japanese Gods"
+    ],
+    "limitBreakIncr": 40,
+    "voiceId": 0,
+    "orbSkinOrBgmId": 0,
+    "specialAttribute": "",
+    "searchFlags": [
+      20976644,
+      0
+    ],
+    "gachaGroupsFlag": 4,
+    "badgeId": 0,
+    "otLangName": {
+      "ja": "甘味の撫子・クシナダヒメ",
+      "cht": "甜味之撫子・奇稻田姬",
+      "chs": "甜味的抚子・奇稻田姬",
+      "ko": "간판 요조숙녀 구시나다히메"
+    },
+    "otTags": [
+      "バレンタイン",
+      "和神",
+      "情人節",
+      "日本神話",
+      "情人节",
+      "日本神话",
+      "발렌타인",
+      "일본신"
+    ]
+  },
+  "skills": [
+    {
+      "id": 9891,
+      "name": "Loving Perception",
+      "description": "Vastly reduces damage & adds 8 combos for 2 turns;\nvoids Attribute & damage absorption for 3 turns",
+      "type": 116,
+      "maxLevel": 12,
+      "initialCooldown": 20,
+      "unk": "",
+      "params": [
+        9892,
+        9893,
+        26447
+      ]
+    },
+    {
+      "id": 9892,
+      "name": "",
+      "description": "",
+      "type": 3,
+      "maxLevel": 6,
+      "initialCooldown": 10,
+      "unk": "",
+      "params": [
+        2,
+        75
+      ]
+    },
+    {
+      "id": 9893,
+      "name": "",
+      "description": "",
+      "type": 160,
+      "maxLevel": 6,
+      "initialCooldown": 10,
+      "unk": "",
+      "params": [
+        2,
+        8
+      ]
+    },
+    {
+      "id": 9894,
+      "name": "Please come here",
+      "description": "^ff3600^[No Skyfall Combos]^p; 3.5x all stats for {God} ; 13x ATK, reduces\ndamage & inflicts 15,000,000 damage with 5+ combos",
+      "type": 138,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        9895,
+        9896,
+        27395
+      ]
+    },
+    {
+      "id": 9895,
+      "name": "",
+      "description": "",
+      "type": 163,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        0,
+        32,
+        350,
+        350,
+        350
+      ]
+    },
+    {
+      "id": 9896,
+      "name": "",
+      "description": "",
+      "type": 169,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        5,
+        1300,
+        35
+      ]
+    },
+    {
+      "id": 26447,
+      "name": "",
+      "description": "",
+      "type": 173,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        3,
+        1,
+        0,
+        1
+      ]
+    },
+    {
+      "id": 27395,
+      "name": "",
+      "description": "",
+      "type": 223,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        5,
+        15000000
+      ]
+    }
+  ]
+}

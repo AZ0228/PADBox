@@ -1,0 +1,302 @@
+{
+  "snapshot_commit": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+  "monster_id": 7096,
+  "name": "Inquisitive Saintly Wise Queen, Saphira",
+  "provenance": {
+    "source": "PADDashFormation/NA",
+    "version": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+    "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8/monsters-info/mon_en.json",
+    "fetched_at": "2026-11-05T23:59:50.549212+00:00",
+    "updated_at": "2026-10-30T12:00:38.631000+00:00",
+    "sha256": "e3aaa7a7a3f34080ee40756cfd85ed3bb3956418f452cb674915a5749254605a",
+    "usage": "Upstream code GPL-3.0; game art/metadata third-party; local cache only"
+  },
+  "skill_index": {
+    "file": "monsters-info/skill_en.json",
+    "sha256": "b100979ea3ab7931239fcc8da0b5a525111283468b9b2a14e87c4a4ee9214113"
+  },
+  "card": {
+    "id": 7096,
+    "name": "Inquisitive Saintly Wise Queen, Saphira",
+    "attrs": [
+      3,
+      4,
+      3
+    ],
+    "types": [
+      6,
+      5
+    ],
+    "isUltEvo": false,
+    "rarity": 8,
+    "cost": 70,
+    "maxLevel": 99,
+    "feedExp": 11700,
+    "isEmpty": false,
+    "sellPrice": 12000,
+    "hp": {
+      "min": 652,
+      "max": 6854,
+      "scale": 1
+    },
+    "atk": {
+      "min": 145,
+      "max": 5012,
+      "scale": 1
+    },
+    "rcv": {
+      "min": 21,
+      "max": 352,
+      "scale": 1
+    },
+    "exp": {
+      "min": 0,
+      "max": 5000000,
+      "scale": 2.5
+    },
+    "activeSkillId": 21117,
+    "leaderSkillId": 21120,
+    "evoBaseId": 0,
+    "evoMaterials": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "unevoMaterials": [
+      155,
+      156,
+      157,
+      158,
+      159
+    ],
+    "awakenings": [
+      52,
+      28,
+      109,
+      109,
+      109,
+      109,
+      147,
+      62,
+      62
+    ],
+    "superAwakenings": [],
+    "evoRootId": 7096,
+    "seriesId": 100,
+    "sellMP": 75000,
+    "latentAwakeningId": 0,
+    "collabId": 0,
+    "flags": 34,
+    "canAssist": false,
+    "enabled": true,
+    "stackable": false,
+    "is8Latent": true,
+    "skillBanner": false,
+    "altName": [
+      "Fest Exclusive",
+      "Royal"
+    ],
+    "limitBreakIncr": 0,
+    "voiceId": 0,
+    "orbSkinOrBgmId": 0,
+    "specialAttribute": "",
+    "searchFlags": [
+      39846402,
+      0
+    ],
+    "gachaGroupsFlag": 0,
+    "badgeId": 0,
+    "syncAwakening": 59,
+    "syncAwakeningConditions": [
+      {
+        "id": 5173,
+        "level": 120,
+        "skillLevel": 33
+      },
+      {
+        "id": 1463,
+        "level": 120,
+        "skillLevel": 14
+      }
+    ],
+    "henshinFrom": [
+      7095
+    ],
+    "otLangName": {
+      "ja": "論究の聖賢王・サフィーラ",
+      "cht": "論究之聖賢王・莎菲拉",
+      "chs": "论究的圣贤王・莎菲拉",
+      "ko": "논구의 성현왕 사피라"
+    },
+    "otTags": [
+      "フェス限定",
+      "ふぇすげんてい",
+      "王シリーズ",
+      "FES限定寵物",
+      "「王」系列",
+      "神UP限定宠物",
+      "페스티벌 한정",
+      "왕 시리즈"
+    ]
+  },
+  "skills": [
+    {
+      "id": 130,
+      "name": "",
+      "description": "",
+      "type": 172,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": []
+    },
+    {
+      "id": 21117,
+      "name": "Bright Solution",
+      "description": "Recovers 30% HP; 5x ATK for Light Att. & this ally's dmg cap\nto 25 billion for 2 turns; removes {locks}, changes {Fire}{Water}{Jammers}{Bombs} to {Light}",
+      "type": 116,
+      "maxLevel": 1,
+      "initialCooldown": 2,
+      "unk": "",
+      "params": [
+        34088,
+        21118,
+        42724,
+        130,
+        21119
+      ]
+    },
+    {
+      "id": 21118,
+      "name": "",
+      "description": "",
+      "type": 50,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        2,
+        3,
+        500
+      ]
+    },
+    {
+      "id": 21119,
+      "name": "",
+      "description": "",
+      "type": 154,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        579,
+        8
+      ]
+    },
+    {
+      "id": 21120,
+      "name": "Intense Research",
+      "description": "Halves damage, +2 combos & inflicts 20,000,000 dmg with\n6+ linked Lt or Dk; 2.8x HP & RCV and 60x ATK for Lt Att.",
+      "type": 138,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        21121,
+        21122,
+        21123,
+        21124
+      ]
+    },
+    {
+      "id": 21121,
+      "name": "",
+      "description": "",
+      "type": 129,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        0,
+        280,
+        6000,
+        280
+      ]
+    },
+    {
+      "id": 21122,
+      "name": "",
+      "description": "",
+      "type": 182,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        24,
+        6,
+        100,
+        50
+      ]
+    },
+    {
+      "id": 21123,
+      "name": "",
+      "description": "",
+      "type": 219,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        24,
+        6,
+        2
+      ]
+    },
+    {
+      "id": 21124,
+      "name": "",
+      "description": "",
+      "type": 200,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        24,
+        6,
+        20000000
+      ]
+    },
+    {
+      "id": 34088,
+      "name": "",
+      "description": "",
+      "type": 117,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        0,
+        0,
+        0,
+        30
+      ]
+    },
+    {
+      "id": 42724,
+      "name": "",
+      "description": "",
+      "type": 258,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        2,
+        250,
+        1
+      ]
+    }
+  ]
+}

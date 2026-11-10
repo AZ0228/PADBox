@@ -1,0 +1,249 @@
+{
+  "snapshot_commit": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+  "monster_id": 8336,
+  "name": "Ultraman Gaia (V2)",
+  "provenance": {
+    "source": "PADDashFormation/NA",
+    "version": "6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8",
+    "url": "https://raw.githubusercontent.com/Mapaler/PADDashFormation/6d8b0698208aebef17e4f4fefe6b3c616f8d0ed8/monsters-info/mon_en.json",
+    "fetched_at": "2026-11-05T23:59:50.549212+00:00",
+    "updated_at": "2026-10-30T12:00:38.631000+00:00",
+    "sha256": "e3aaa7a7a3f34080ee40756cfd85ed3bb3956418f452cb674915a5749254605a",
+    "usage": "Upstream code GPL-3.0; game art/metadata third-party; local cache only"
+  },
+  "skill_index": {
+    "file": "monsters-info/skill_en.json",
+    "sha256": "b100979ea3ab7931239fcc8da0b5a525111283468b9b2a14e87c4a4ee9214113"
+  },
+  "card": {
+    "id": 8336,
+    "name": "Ultraman Gaia (V2)",
+    "attrs": [
+      3,
+      1
+    ],
+    "types": [
+      2,
+      6
+    ],
+    "isUltEvo": false,
+    "rarity": 6,
+    "cost": 28,
+    "maxLevel": 99,
+    "feedExp": 5100,
+    "isEmpty": false,
+    "sellPrice": 5400,
+    "hp": {
+      "min": 502,
+      "max": 3116,
+      "scale": 1
+    },
+    "atk": {
+      "min": 496,
+      "max": 2689,
+      "scale": 1
+    },
+    "rcv": {
+      "min": 33,
+      "max": 155,
+      "scale": 1
+    },
+    "exp": {
+      "min": 0,
+      "max": 4000000,
+      "scale": 2.5
+    },
+    "activeSkillId": 26756,
+    "leaderSkillId": 26763,
+    "evoBaseId": 0,
+    "evoMaterials": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "unevoMaterials": [
+      155,
+      156,
+      157,
+      158,
+      159
+    ],
+    "awakenings": [
+      52,
+      56,
+      56,
+      53,
+      82,
+      82,
+      119,
+      119,
+      62
+    ],
+    "superAwakenings": [
+      56,
+      109,
+      62,
+      127
+    ],
+    "evoRootId": 8336,
+    "seriesId": 212,
+    "sellMP": 6000,
+    "latentAwakeningId": 0,
+    "collabId": 102,
+    "flags": 34,
+    "canAssist": false,
+    "enabled": true,
+    "stackable": false,
+    "is8Latent": true,
+    "skillBanner": false,
+    "altName": [],
+    "limitBreakIncr": 77,
+    "voiceId": 0,
+    "orbSkinOrBgmId": 0,
+    "specialAttribute": "",
+    "searchFlags": [
+      38797826,
+      0
+    ],
+    "gachaGroupsFlag": 0,
+    "badgeId": 0,
+    "otLangName": {
+      "ja": "ウルトラマンガイア(V2)",
+      "cht": "超人佳亞/蓋亞(V2)",
+      "chs": "盖亚奥特曼(V2)",
+      "ko": "울트라맨 가이아 (V2)"
+    },
+    "otTags": [
+      "ウルトラマン",
+      "ウルトラマンガイアぶいつー",
+      "「超人系列」合作活動",
+      "「奥特曼系列」合作活动",
+      "울트라맨",
+      "울트라맨 가이아 브이투"
+    ]
+  },
+  "skills": [
+    {
+      "id": 130,
+      "name": "",
+      "description": "",
+      "type": 172,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": []
+    },
+    {
+      "id": 26756,
+      "name": "Gaia (V2) Lifting",
+      "description": "Delays enemies' next move for 4 turns;\nthis skill evolves",
+      "type": 232,
+      "maxLevel": 6,
+      "initialCooldown": 15,
+      "unk": "",
+      "params": [
+        26757,
+        26760
+      ]
+    },
+    {
+      "id": 26757,
+      "name": "Gaia (V2) Lifting",
+      "description": "Delays enemies' next move for 4 turns;\nthis skill evolves",
+      "type": 18,
+      "maxLevel": 6,
+      "initialCooldown": 15,
+      "unk": "",
+      "params": [
+        4
+      ]
+    },
+    {
+      "id": 26760,
+      "name": "Gaia Slash",
+      "description": "Removes {locks}, changes 6 non-{Heal} to {Light}",
+      "type": 116,
+      "maxLevel": 1,
+      "initialCooldown": 2,
+      "unk": "",
+      "params": [
+        130,
+        26762
+      ]
+    },
+    {
+      "id": 26762,
+      "name": "",
+      "description": "",
+      "type": 141,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        6,
+        8,
+        40
+      ]
+    },
+    {
+      "id": 26763,
+      "name": "Will of the Earth",
+      "description": "38x ATK, halves damage & inflicts 1 dmg with 9+ linked\nLight Orbs; 2.4x HP for Light Att.; Orb move time +3 sec",
+      "type": 138,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        26764,
+        26765,
+        26770
+      ]
+    },
+    {
+      "id": 26764,
+      "name": "",
+      "description": "",
+      "type": 185,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        300,
+        8,
+        0,
+        240
+      ]
+    },
+    {
+      "id": 26765,
+      "name": "",
+      "description": "",
+      "type": 182,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        9,
+        3800,
+        50
+      ]
+    },
+    {
+      "id": 26770,
+      "name": "",
+      "description": "",
+      "type": 200,
+      "maxLevel": 0,
+      "initialCooldown": 0,
+      "unk": "",
+      "params": [
+        8,
+        9,
+        1
+      ]
+    }
+  ]
+}
